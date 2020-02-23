@@ -107,11 +107,12 @@ bool StringLookups::Open(char * ModName)
     return true;
 }
 
-void StringLookups::Open(char * FileName, boost::iostreams::mapped_file_source &file_map)
+void StringLookups::Open(char * FileName, mio::mmap_source &file_map)
 {
     try
     {
-        file_map.open(FileName);
+		std::error_code error;
+        file_map.map(std::string(FileName), error);
     }
     catch(std::ios::failure const &ex)
     {
@@ -140,11 +141,11 @@ bool StringLookups::Close()
         // close() on a closed file is bad, so check
         // anyway.
         if (ret)
-            file_map_strings.close();
+            file_map_strings.unmap();
         if (file_map_dlstrings.is_open())
-            file_map_dlstrings.close();
+            file_map_dlstrings.unmap();
         if (file_map_ilstrings.is_open())
-            file_map_ilstrings.close();
+            file_map_ilstrings.unmap();
 
         return ret;
     }
@@ -157,7 +158,7 @@ void StringLookups::Load()
     Load(file_map_ilstrings, eILStrings);
 }
 
-void StringLookups::Load(boost::iostreams::mapped_file_source &file_map, typeTypes Type)
+void StringLookups::Load(mio::mmap_source &file_map, typeTypes Type)
 {
     uint8_t *buffer, *dataBegin;
     buffer = const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(file_map.data()));

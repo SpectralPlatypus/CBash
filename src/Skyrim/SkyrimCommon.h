@@ -55,12 +55,12 @@ class StringLookups
         typedef std::map<uint32_t,char *> MapType;
 
     private:
-        boost::iostreams::mapped_file_source file_map_strings;
-        boost::iostreams::mapped_file_source file_map_dlstrings;
-        boost::iostreams::mapped_file_source file_map_ilstrings;
+		mio::mmap_source file_map_strings;
+		mio::mmap_source file_map_dlstrings;
+		mio::mmap_source file_map_ilstrings;
 
-        void Open(char * FileName, boost::iostreams::mapped_file_source &file_map);
-        void Load(boost::iostreams::mapped_file_source &file_map, typeTypes Type);
+        void Open(char * FileName, mio::mmap_source &file_map);
+        void Load(mio::mmap_source &file_map, typeTypes Type);
 
         char * GetFileName(char * ModName, char * Language, typeTypes Type) const;
 

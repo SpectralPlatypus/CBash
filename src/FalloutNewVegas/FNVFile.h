@@ -258,7 +258,7 @@ class FNVFile : public ModFile
         int32_t   DeleteRecord(Record *&curRecord, RecordOp &deindexer);
         int32_t   Save(char * const &SaveName, std::vector<FormIDResolver *> &Expanders, bool CloseMod, RecordOp &indexer);
 
-        void     SetFilter(bool inclusive, boost::unordered_set<uint32_t> &RecordTypes, boost::unordered_set<FORMID> &WorldSpaces);
+        void     SetFilter(bool inclusive, std::unordered_set<uint32_t> &RecordTypes, std::unordered_set<FORMID> &WorldSpaces);
 
         void     VisitAllRecords(RecordOp &op);
         void     VisitRecords(const uint32_t &RecordType, RecordOp &op);

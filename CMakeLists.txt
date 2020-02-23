@@ -10,25 +10,38 @@
 
 cmake_minimum_required (VERSION 3.0)
 project (CBash)
+include(ExternalProject)
 
-option(BUILD_SHARED_LIBS "Build a shared library" ON)
-option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
-option(CBASH_NO_BOOST_ZLIB "Build with external Zlib" OFF)
-
-set (Boost_USE_STATIC_LIBS ON)
-set (Boost_DEBUG ON)
-set (Boost_USE_MULTITHREADED ON)
-set (Boost_USE_STATIC_RUNTIME PROJECT_STATIC_RUNTIME)
-
+ExternalProject_Add(zlib
+                    PREFIX "external"
+                    URL "https://zlib.net/zlib-1.2.11.tar.gz"
+                    INSTALL_COMMAND "")
+ExternalProject_Get_Property(zlib SOURCE_DIR BINARY_DIR)
+set (ZLIB_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR})
+message("ZLIB_INCLUDE_DIRS:" ${ZLIB_INCLUDE_DIRS})
 IF (MSVC)
-    set (Boost_COMPILER "-vc140")
+    set (ZLIB_LIBRARIES optimized "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstatic${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                    debug "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstaticd${CMAKE_STATIC_LIBRARY_SUFFIX}")
+ELSE ()
+    set (ZLIB_LIBRARIES "${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
 ENDIF ()
+
+option(BUILD_SHARED_LIBS "Build a shared library" OFF)
+option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
+option(CBASH_NO_BOOST_ZLIB "Build with external Zlib" ON)
 
 
 file (GLOB_RECURSE CBASH_FONV "${CMAKE_CURRENT_SOURCE_DIR}/src/FalloutNewVegas/*.cpp")
 file (GLOB_RECURSE CBASH_OBLIVION "${CMAKE_CURRENT_SOURCE_DIR}/src/Oblivion/*.cpp")
 file (GLOB_RECURSE CBASH_SKYRIM "${CMAKE_CURRENT_SOURCE_DIR}/src/Skyrim/*.cpp")
+file (GLOB_RECURSE CBASH_SKYRIM_H "${CMAKE_CURRENT_SOURCE_DIR}/src/Skyrim/*.h")
 file (GLOB_RECURSE CBASH_SKYBLIVION "${CMAKE_CURRENT_SOURCE_DIR}/src/Skyblivion/*.cpp")
+
+source_group("FONV" FILES ${CBASH_FONV})
+source_group("Oblivion" FILES ${CBASH_OBLIVION})
+source_group("Skyrim\\Headers" FILES ${CBASH_SKYRIM_H})
+source_group("Skyrim\\Source" FILES ${CBASH_SKYRIM})
+source_group("Skyblivion" FILES ${CBASH_SKYBLIVION})
 
 set (CBASH_SRC  "${CMAKE_CURRENT_SOURCE_DIR}/src/CBash.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/src/Collection.cpp"
@@ -47,24 +60,12 @@ set (CBASH_SRC  "${CMAKE_CURRENT_SOURCE_DIR}/src/CBash.cpp"
                 ${CBASH_SKYBLIVION}
                 )
 
-IF (CBASH_NO_BOOST_ZLIB)
-    add_definitions(-DCBASH_NO_BOOST_ZLIB)
-    find_package(Boost REQUIRED COMPONENTS iostreams regex)
-    find_package(ZLIB REQUIRED)
-    set (CBASH_LIBS ${ZLIB_LIBRARY})
-ELSE ()
-    find_package(Boost REQUIRED COMPONENTS iostreams zlib regex)
-    find_package(ZLIB)
-    set (CBASH_LIBS "")
-ENDIF ()
 
-IF (NOT ${ZLIB_FOUND})
-	message(FATAL_ERROR "ZLIB was not found, target correct ZLIB_ROOT or use a common path")
-ENDIF ()
+add_definitions(-DCBASH_NO_BOOST_ZLIB)
+
 
 # Include source and library directories.
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
-                     ${Boost_INCLUDE_DIRS}
                      ${ZLIB_INCLUDE_DIR})
 
 
@@ -106,4 +107,5 @@ ENDIF ()
 
 # Build CBash.
 add_library           (CBash STATIC ${CBASH_SRC})
-target_link_libraries (CBash ${Boost_LIBRARIES} ${CBASH_LIBS})
+add_dependencies	  (CBash zlib)
+target_link_libraries (CBash ${ZLIB_LIBRARIES})

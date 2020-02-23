@@ -36,46 +36,56 @@
 #pragma once
 #include "../../Common.h"
 #include "../../GenericRecord.h"
-
-namespace Ob
+#include "INFORecord.h"
+#include <array>
+namespace Sk
 {
-class ROADRecord : public Record
+	struct IDLEDATA {
+		uint8_t min;
+		uint8_t max;
+		uint8_t flags;
+		uint8_t unk;
+		uint16_t replay;
+
+		bool operator ==(const IDLEDATA &other) const;
+		bool operator !=(const IDLEDATA &other) const;
+	};
+
+	struct IDLEANAM {
+		FORMID parent;
+		FORMID sibling;
+
+		bool operator ==(const IDLEANAM &other) const;
+		bool operator !=(const IDLEANAM &other) const;
+	};
+
+class IDLERecord : public TES5Record //Texture Set
     {
-    private:
-        struct ROADPGRR
-            {
-            float x, y, z;
-
-            ROADPGRR();
-            ~ROADPGRR();
-
-            bool operator ==(const ROADPGRR &other) const;
-            bool operator !=(const ROADPGRR &other) const;
-            };
 
     public:
-        UnorderedPackedArray<GENPGRP> PGRP; //Points
-        UnorderedPackedArray<ROADPGRR> PGRR; //Point-to-Point Connections
+        StringRecord EDID; //Editor ID
+		UnorderedSparseArray<SKCondition*> CTDA; //Conditions
+		StringRecord DNAM; //Path to hkx Behaviour.
+		StringRecord ENAM; //Behaviour event.
+		ReqSubRecord<IDLEANAM> ANAM;
+		ReqSubRecord<IDLEDATA> DATA;
 
-        ROADRecord(unsigned char *_recData=NULL);
-        ROADRecord(ROADRecord *srcRecord);
-        ~ROADRecord();
+		IDLERecord(unsigned char *_recData=NULL);
+		IDLERecord(IDLERecord *srcRecord);
+        ~IDLERecord();
 
-        uint32_t GetFieldAttribute(DEFAULTED_FIELD_IDENTIFIERS, uint32_t WhichAttribute=0);
-        void * GetField(DEFAULTED_FIELD_IDENTIFIERS, void **FieldValues=NULL);
-        bool   SetField(DEFAULTED_FIELD_IDENTIFIERS, void *FieldValue=NULL, uint32_t ArraySize=0);
-        void   DeleteField(DEFAULTED_FIELD_IDENTIFIERS);
+		uint32_t  GetType();
+		char *  GetStrType();
 
-        uint32_t GetType();
-        char * GetStrType();
+		bool   VisitFormIDs(FormIDOp &op);
 
-        int32_t ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk=false);
-        int32_t Unload();
-        int32_t WriteRecord(FileWriter &writer);
+		int32_t  ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk);
+		int32_t  Unload();
+		int32_t  WriteRecord(FileWriter &writer);
+		char *GetEditorIDKey() { return EDID.value; }
 
-        bool operator ==(const ROADRecord &other) const;
-        bool operator !=(const ROADRecord &other) const;
+        bool operator ==(const IDLERecord &other) const;
+        bool operator !=(const IDLERecord &other) const;
         bool equals(Record *other);
-        bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records);
     };
 }

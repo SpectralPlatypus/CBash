@@ -177,7 +177,7 @@ bool ROADRecord::equals(Record *other)
     return *this == *(ROADRecord *)other;
     }
 
-bool ROADRecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool ROADRecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     //Precondition: equals has been run for these records and returned true
     //Check to make sure the parent world is attached at the same spot

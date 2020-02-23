@@ -122,6 +122,7 @@ uint32_t PropertyObjectArray::GetSize() const
 
 void PropertyObjectArray::Read(unsigned char *&buffer, const int16_t &version, const int16_t &objFormat, const bool &CompressedOnDisk)
 {
+	Property::Read(buffer, version, objFormat, CompressedOnDisk);
     uint32_t count = *(uint32_t *)buffer;
     buffer += 4;
 

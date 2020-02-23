@@ -162,6 +162,6 @@ class WRLDRecord : public TES5Record //Worldspace
         bool operator ==(const WRLDRecord &other) const;
         bool operator !=(const WRLDRecord &other) const;
         bool equals(Record *other);
-        bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records);
+        bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records);
     };
 }

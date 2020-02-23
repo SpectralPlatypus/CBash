@@ -95,6 +95,7 @@ uint32_t PropertyFloatArray::GetSize() const
 
 void PropertyFloatArray::Read(unsigned char *&buffer, const int16_t &version, const int16_t &objFormat, const bool &CompressedOnDisk)
 {
+	Property::Read(buffer, version, objFormat, CompressedOnDisk);
     uint32_t count = *(uint32_t *)buffer;
     buffer += 4;
 

@@ -59,7 +59,7 @@ ModFile::ModFile(Collection *_Parent, char * filename, char * modname, const uin
     ModTime = mtime();
     if(Flags.IsNoLoad || Flags.IsCreateNew || !exists())
         {
-        Flags.IsNoLoad = Flags.IsNoLoad || !exists();
+        Flags.IsNoLoad = Flags.IsNoLoad || (!exists() && !Flags.IsCreateNew);
         TES4.IsLoaded(true);
         char * const _Name = ModName;
         TES4.IsESM(icmps(".esm",_Name + strlen(_Name) - 4) == 0);
@@ -119,7 +119,8 @@ bool ModFile::Open()
         return false;
     try
         {
-        file_map.open(FileName);
+		std::error_code error;
+		file_map.map(std::string(FileName), error);
         }
     catch(std::ios::failure const &ex)
         {
@@ -151,7 +152,7 @@ bool ModFile::Close()
     if(!file_map.is_open())
         return false;
 
-    file_map.close();
+    file_map.unmap();
     return true;
     }
 

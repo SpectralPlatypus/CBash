@@ -90,12 +90,12 @@ struct Collection
         EditorID_Map ExtendedEditorID_ModFile_Record;
         FormID_Map ExtendedFormID_ModFile_Record;
 
-        boost::unordered_set<Record *> identical_records;
-        boost::unordered_set<Record *> changed_records;
+        std::unordered_set<Record *> identical_records;
+        std::unordered_set<Record *> changed_records;
         std::vector<GenericOp *> closing_ops;
 
-        boost::unordered_set<uint32_t> filter_records;
-        boost::unordered_set<FORMID> filter_wspaces;
+        std::unordered_set<uint32_t> filter_records;
+        std::unordered_set<FORMID> filter_wspaces;
         bool filter_inclusive;
 
         Collection(char * const &ModsPath, uint32_t _CollectionType);
@@ -103,7 +103,7 @@ struct Collection
 
         ModFile * AddMod(char * const &_FileName, ModFlags &flags, bool IsPreloading=false);
         ModFile * IsModAdded(char * const &ModName);
-        int32_t SaveMod(ModFile *&curModFile, SaveFlags &flags, char * const DestinationName);
+        int32_t SaveMod(ModFile *&curModFile, ModSaveFlags &flags, char * const DestinationName);
 
         void SetFilterMode(bool inclusive);
         void AddRecordFilter(uint32_t recordtype);
@@ -192,7 +192,7 @@ class IdenticalToMasterRetriever : public RecordOp
         EditorID_Map &EditorID_ModFile_Record;
         FormID_Map &FormID_ModFile_Record;
         const uint8_t &MasterIndex;
-        boost::unordered_set<Record *> &identical_records;
+        std::unordered_set<Record *> &identical_records;
         std::vector<FormIDResolver *> &Expanders;
 
         RecordReader reader;

@@ -100,6 +100,6 @@ class ACHRRecord : public FNVRecord //Placed NPC
         bool operator ==(const ACHRRecord &other) const;
         bool operator !=(const ACHRRecord &other) const;
         bool equals(Record *other);
-        bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records);
+        bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records);
     };
 }

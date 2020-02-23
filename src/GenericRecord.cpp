@@ -71,7 +71,7 @@ bool RecordOp::Stop()
     return stop;
     }
 
-RecordProcessor::RecordProcessor(ModFile *_curModFile, FormIDHandlerClass &_FormIDHandler, const ModFlags &_Flags, boost::unordered_set<uint32_t> &_UsedFormIDs):
+RecordProcessor::RecordProcessor(ModFile *_curModFile, FormIDHandlerClass &_FormIDHandler, const ModFlags &_Flags, std::unordered_set<uint32_t> &_UsedFormIDs):
     curModFile(_curModFile),
     filter_records(),
     filter_wspaces(),
@@ -364,7 +364,7 @@ bool Record::IsValid(FormIDResolver &expander)
     return (recData <= expander.FileEnd && recData >= expander.FileStart);
     }
 
-bool Record::master_equality(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool Record::master_equality(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     if(!shallow_equals(master))
         return false;
@@ -393,7 +393,7 @@ bool Record::shallow_equals(Record *other)
     return true;
     }
 
-bool Record::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool Record::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     return true;
     }

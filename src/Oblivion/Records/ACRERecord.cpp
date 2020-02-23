@@ -250,7 +250,7 @@ bool ACRERecord::equals(Record *other)
     return *this == *(ACRERecord *)other;
     }
 
-bool ACRERecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool ACRERecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     //Precondition: equals has been run for these records and returned true
     CELLRecord *parent_cell = (CELLRecord *)GetParentRecord(), *master_cell = (CELLRecord *)master->GetParentRecord();

@@ -1123,7 +1123,7 @@ bool INFORecord::equals(Record *other)
     return *this == *(INFORecord *)other;
     }
 
-bool INFORecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool INFORecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     //Precondition: equals has been run for these records and returned true
     //Check to make sure the info is attached at the same spot

@@ -321,7 +321,7 @@ typedef Record ** RECORDIDARRAY;
 
 // Quick macro to debug struct sizes at compile time
 #define SIZE_CHECK_MSG(type, size, msg) \
-    BOOST_STATIC_ASSERT_MSG(sizeof(type) == size, msg)
+    static_assert(sizeof(type) == size, msg)
 
 // Macro to ensure a structure has a specific size when compiled.
 // This ensured that doing a memcpy from a file on disk will correctly

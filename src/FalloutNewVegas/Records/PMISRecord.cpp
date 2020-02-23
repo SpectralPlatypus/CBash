@@ -425,7 +425,7 @@ bool PMISRecord::equals(Record *other)
     return *this == *(PMISRecord *)other;
     }
 
-bool PMISRecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records)
+bool PMISRecord::deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records)
     {
     //Precondition: equals has been run for these records and returned true
     CELLRecord *parent_cell = (CELLRecord *)GetParentRecord(), *master_cell = (CELLRecord *)master->GetParentRecord();

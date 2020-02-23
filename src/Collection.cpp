@@ -269,7 +269,7 @@ ModFile * Collection::IsModAdded(char * const &ModName)
     return NULL;
     }
 
-int32_t Collection::SaveMod(ModFile *&curModFile, SaveFlags &flags, char * const DestinationName)
+int32_t Collection::SaveMod(ModFile *&curModFile, ModSaveFlags &flags, char * const DestinationName)
     {
     if(!curModFile->Flags.IsSaveable)
         {

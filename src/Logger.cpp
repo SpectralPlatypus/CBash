@@ -37,27 +37,27 @@ void Logger::init(int argc, char * argv[]) {
 
 	logFile << "Arguments: " << argv[1] << " " << argv[2] << " " << argv[3] << " " << logLevel << std::endl << std::endl;
 
-	Log info;
+	CBashLog info;
 	info.logFile = &logFile;
 	info.isHigherLevel = (logLevel <= 0);
 	loggers.push_back(info);
 
-	Log warning;
+	CBashLog warning;
 	warning.logFile = &logFile;
 	warning.isHigherLevel = (logLevel <= 1);
 	loggers.push_back(warning);
 
-	Log debug;
+	CBashLog debug;
 	debug.logFile = &logFile;
 	debug.isHigherLevel = (logLevel <= 2);
 	loggers.push_back(debug);
 
-	Log error;
+	CBashLog error;
 	error.logFile = &logFile;
 	error.isHigherLevel = (logLevel <= 3);
 	loggers.push_back(error);
 }
 
-Log* Logger::getLogger(int level) {
+CBashLog* Logger::getLogger(int level) {
 	return &loggers[level];
 }

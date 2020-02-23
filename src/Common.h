@@ -37,6 +37,7 @@
 
 // Common.h
 #ifdef _WIN32
+#define NOMINMAX
 #include <io.h>
 #include <share.h>
 #include <exception>
@@ -54,14 +55,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <boost/unordered_set.hpp>
+//#include <boost/unordered_set.hpp>
+#include <unordered_set>
 #include <set>
 #include <map>
-#include <boost/iostreams/device/mapped_file.hpp>
+//#include <boost/iostreams/device/mapped_file.hpp>
+#include <mio.hpp>
 #include <vector>
 #include "MacroDefinitions.h"
 #include "Types.h"
 #include "Logger.h"
+#include <assert.h>
 
 #define log_info (*logger.getLogger(0))
 #define log_warning (*logger.getLogger(1))<<"WARNING: "
@@ -455,7 +459,7 @@ class FormIDHandlerClass
     public:
         std::vector<char *> &MAST;        //The list of masters
         std::vector<char *> LoadOrder255;       //The current load order of active mods
-        boost::unordered_set<uint32_t> NewTypes;  //Tracks the type of any new records for reporting
+        std::unordered_set<uint32_t> NewTypes;  //Tracks the type of any new records for reporting
         uint32_t &nextObject;                     //The object counter for quickly providing new objectIDs
         uint8_t  ExpandTable[256];                //Maps the on disk modIndex to the in memory modIndex
         uint8_t  CollapseTable[256];              //Maps the in memory modIndex to the on disk modIndex (not always a direct inverse of ExpandTable)
@@ -525,12 +529,12 @@ class ModFlags
         uint32_t GetFlags();
     };
 
-class SaveFlags
+class ModSaveFlags
     {
     public:
-        SaveFlags();
-        SaveFlags(uint32_t _Flags);
-        ~SaveFlags();
+		ModSaveFlags();
+		ModSaveFlags(uint32_t _Flags);
+        ~ModSaveFlags();
 
         bool IsCleanMasters;
         bool IsCloseCollection;

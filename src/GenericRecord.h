@@ -75,16 +75,16 @@ class RecordProcessor
     {
     public:
         ModFile *curModFile;
-        boost::unordered_set<uint32_t> &NewTypes;
+        std::unordered_set<uint32_t> &NewTypes;
         uint8_t ExpandedIndex;
         FormIDResolver expander;
         const ModFlags &Flags;
-        boost::unordered_set<uint32_t> &UsedFormIDs;
+        std::unordered_set<uint32_t> &UsedFormIDs;
         int32_t &EmptyGRUPs;
         std::vector<FORMID> &OrphanedRecords;
 
-        boost::unordered_set<uint32_t> filter_records;
-        boost::unordered_set<uint32_t> filter_wspaces;
+        std::unordered_set<uint32_t> filter_records;
+        std::unordered_set<uint32_t> filter_wspaces;
         bool filter_inclusive; FORMID activewspace;
 
         bool IsSkipNewRecords;
@@ -93,13 +93,13 @@ class RecordProcessor
         bool IsTrackNewTypes;
         bool IsAddMasters;
 
-        RecordProcessor(ModFile *curModFile, FormIDHandlerClass &_FormIDHandler, const ModFlags &_Flags, boost::unordered_set<uint32_t> &_UsedFormIDs);
+        RecordProcessor(ModFile *curModFile, FormIDHandlerClass &_FormIDHandler, const ModFlags &_Flags, std::unordered_set<uint32_t> &_UsedFormIDs);
         ~RecordProcessor();
 
         //template<bool IsKeyedByEditorID, typename U>
         //typename boost::enable_if_c<!IsKeyedByEditorID,bool>::type Accept(U &header)
 
-        void SetFilter(bool inclusive, boost::unordered_set<uint32_t> &RecordTypes, boost::unordered_set<FORMID> &WorldSpaces) {
+        void SetFilter(bool inclusive, std::unordered_set<uint32_t> &RecordTypes, std::unordered_set<FORMID> &WorldSpaces) {
             filter_inclusive = inclusive;
             filter_records = RecordTypes;
             filter_wspaces = WorldSpaces;
@@ -263,10 +263,10 @@ struct Record
         virtual uint32_t Write(FileWriter &writer, const bool &bMastersChanged, FormIDResolver &expander, FormIDResolver &collapser, std::vector<FormIDResolver *> &Expanders);
         bool           IsValid(FormIDResolver &expander);
 
-        bool         master_equality(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records);
+        bool         master_equality(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records);
         bool         shallow_equals(Record *other);
         virtual bool equals(Record *other) = 0;
-        virtual bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, boost::unordered_set<Record *> &identical_records);
+        virtual bool deep_equals(Record *master, RecordOp &read_self, RecordOp &read_master, std::unordered_set<Record *> &identical_records);
 
 		bool ReadRecord(int32_t sizeDistance);
         bool IsDeleted() const;

@@ -49,7 +49,7 @@ FNVFile::~FNVFile()
     //
     }
 
-void FNVFile::SetFilter(bool inclusive, boost::unordered_set<uint32_t> &RecordTypes, boost::unordered_set<FORMID> &WorldSpaces) {
+void FNVFile::SetFilter(bool inclusive, std::unordered_set<uint32_t> &RecordTypes, std::unordered_set<FORMID> &WorldSpaces) {
   filter_inclusive = inclusive;
   filter_records = RecordTypes;
   filter_wspaces = WorldSpaces;
@@ -216,7 +216,7 @@ int32_t FNVFile::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<Form
     unsigned char *group_buffer_end = NULL;
     uint32_t GRUPSize;
     uint32_t GRUPLabel;
-    boost::unordered_set<uint32_t> UsedFormIDs;
+    std::unordered_set<uint32_t> UsedFormIDs;
 
     RecordOp skip_parser;
     RecordOp &parser = Flags.IsFullLoad ? read_parser : skip_parser;

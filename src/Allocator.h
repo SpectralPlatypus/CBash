@@ -67,7 +67,7 @@ class RecordPoolAllocator
         //    uint32_t freed_bytes = 0;
         //    if(freed_position)
         //        {
-        //        boost::unordered_set<unsigned char *> free_set;
+        //        std::unordered_set<unsigned char *> free_set;
         //        MakeFreeSet(free_set);
         //        for(int32_t p = (int32_t)buffers.size() - 1;p >= 0; --p)
         //            {
@@ -133,7 +133,7 @@ class RecordPoolAllocator
 
         void purge_with_destructors()
             {
-            boost::unordered_set<unsigned char *> free_set;
+            std::unordered_set<unsigned char *> free_set;
             MakeFreeSet(free_set);
             for(uint32_t p = 0;p < buffers.size(); p++)
                 {
@@ -266,7 +266,7 @@ class RecordPoolAllocator
 
         bool VisitRecords(RecordOp &op)
             {
-            boost::unordered_set<unsigned char *> free_set;
+            std::unordered_set<unsigned char *> free_set;
 
             MakeFreeSet(free_set);
             for(uint32_t p = 0;p < buffers.size(); p++)
@@ -287,7 +287,7 @@ class RecordPoolAllocator
             return false;
             }
 
-        void MakeFreeSet(boost::unordered_set<unsigned char *> &free_set)
+        void MakeFreeSet(std::unordered_set<unsigned char *> &free_set)
             {
             if(freed_position)
                 {
@@ -318,7 +318,7 @@ class RecordPoolAllocator
 
         void MakeRecordsVector(std::vector<Record *> &Records)
             {
-            boost::unordered_set<unsigned char *> free_set;
+            std::unordered_set<unsigned char *> free_set;
             MakeFreeSet(free_set);
             Records.reserve(object_capacity() - free_set.size());
             for(uint32_t p = 0;p < buffers.size(); p++)
@@ -337,7 +337,7 @@ class RecordPoolAllocator
 
         void MakeRecordsArray(RECORDIDARRAY Records)
             {
-            boost::unordered_set<unsigned char *> free_set;
+            std::unordered_set<unsigned char *> free_set;
             MakeFreeSet(free_set);
             uint32_t pos = 0;
             for(uint32_t p = 0;p < buffers.size(); p++)

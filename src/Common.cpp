@@ -898,21 +898,21 @@ uint32_t ModFlags::GetFlags()
     return flags;
     }
 
-SaveFlags::SaveFlags():
+ModSaveFlags::ModSaveFlags():
     IsCleanMasters(true),
     IsCloseCollection(false)
     {
     //
     }
 
-SaveFlags::SaveFlags(uint32_t _Flags):
+ModSaveFlags::ModSaveFlags(uint32_t _Flags):
     IsCleanMasters((_Flags & fIsCleanMasters) != 0),
     IsCloseCollection((_Flags & fIsCloseCollection) != 0)
     {
     //
     }
 
-SaveFlags::~SaveFlags()
+ModSaveFlags::~ModSaveFlags()
     {
     //
     }

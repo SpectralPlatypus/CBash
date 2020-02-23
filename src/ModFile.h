@@ -44,15 +44,15 @@ struct Collection;
 struct ModFile
     {
     public:
-        boost::iostreams::mapped_file_source file_map;
+		mio::mmap_source file_map;
 
         char * FileName;
         char * ModName;
 
         unsigned char *buffer_start, *buffer_position, *buffer_end;
 
-        boost::unordered_set<uint32_t> filter_records;
-        boost::unordered_set<FORMID> filter_wspaces;
+        std::unordered_set<uint32_t> filter_records;
+        std::unordered_set<FORMID> filter_wspaces;
         bool filter_inclusive;
 
         FormIDHandlerClass FormIDHandler;
@@ -83,7 +83,7 @@ struct ModFile
         virtual int32_t   DeleteRecord(Record *&curRecord, RecordOp &deindexer) = 0;
         virtual int32_t   Save(char * const &SaveName, std::vector<FormIDResolver *> &Expanders, bool CloseMod, RecordOp &indexer) = 0;
 
-        virtual void     SetFilter(bool inclusive, boost::unordered_set<uint32_t> &RecordTypes, boost::unordered_set<FORMID> &WorldSpaces) = 0;
+        virtual void     SetFilter(bool inclusive, std::unordered_set<uint32_t> &RecordTypes, std::unordered_set<FORMID> &WorldSpaces) = 0;
 
         virtual void     VisitAllRecords(RecordOp &op) = 0;
         virtual void     VisitRecords(const uint32_t &RecordType, RecordOp &op) = 0;

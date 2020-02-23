@@ -570,7 +570,7 @@ CPPDLLEXTERN int32_t CleanModMasters(ModFile *ModID)
 CPPDLLEXTERN int32_t SaveMod(ModFile *ModID, const uint32_t SaveFlagsField, char * const DestinationName)
     {
     int32_t err = 0;
-    SaveFlags flags(SaveFlagsField);
+	ModSaveFlags flags(SaveFlagsField);
     try
         {
         //Profiling is in try block so that the timer gets destructed before DeleteCollection is called
@@ -1037,7 +1037,7 @@ CPPDLLEXTERN int32_t GetModTypes(ModFile *ModID, UINT32ARRAY RecordTypes)
             }
 
         uint32_t x = 0;
-        for(boost::unordered_set<uint32_t>::iterator it = ModID->FormIDHandler.NewTypes.begin(); it != ModID->FormIDHandler.NewTypes.end(); ++it, ++x)
+        for(std::unordered_set<uint32_t>::iterator it = ModID->FormIDHandler.NewTypes.begin(); it != ModID->FormIDHandler.NewTypes.end(); ++it, ++x)
             RecordTypes[x] = *it;
         return 0;
         }
@@ -1561,7 +1561,7 @@ CPPDLLEXTERN int32_t GetIdenticalToMasterRecords(ModFile *ModID, RECORDIDARRAY R
         {
         //ValidatePointer(RecordID1);
                 //ValidatePointer(RecordID2);
-        typedef boost::unordered_set<Record *>::iterator identical_it;
+        typedef std::unordered_set<Record *>::iterator identical_it;
         uint32_t count = 0;
         for(identical_it item = ModID->Parent->identical_records.begin(); item != ModID->Parent->identical_records.end(); item++)
             RecordIDs[count++] = *item;

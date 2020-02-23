@@ -50,7 +50,7 @@ TES5File::~TES5File()
     //
     }
 
-void TES5File::SetFilter(bool inclusive, boost::unordered_set<uint32_t> &RecordTypes, boost::unordered_set<FORMID> &WorldSpaces) {
+void TES5File::SetFilter(bool inclusive, std::unordered_set<uint32_t> &RecordTypes, std::unordered_set<FORMID> &WorldSpaces) {
   filter_inclusive = inclusive;
   filter_records = RecordTypes;
   filter_wspaces = WorldSpaces;
@@ -236,7 +236,7 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
     unsigned char *group_buffer_end = NULL;
     uint32_t GRUPSize;
     uint32_t GRUPLabel;
-    boost::unordered_set<uint32_t> UsedFormIDs;
+    std::unordered_set<uint32_t> UsedFormIDs;
 
     RecordOp skip_parser;
     RecordOp &parser = Flags.IsFullLoad ? read_parser : skip_parser;
@@ -493,8 +493,8 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
         case eIgIDLE:
         case REV32(IDLE):
-            buffer_position = group_buffer_end;
-            //IDLE.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            IDLE.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
         case eIgIDLM:
         case REV32(IDLM):
@@ -1452,10 +1452,10 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
     */
     case REV32(QUST):
         return QUST.pool.construct(SourceRecord, this, true);
-        /*
+        
     case REV32(IDLE):
         return IDLE.pool.construct(SourceRecord, this, true);
-	*/
+	
     case REV32(PACK):
         return PACK.pool.construct(SourceRecord, this, true);
 	/*
@@ -2467,7 +2467,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     formCount += WRLD.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod, FormIDHandler, CELL, indexer);
     formCount += DIAL.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += QUST.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += IDLE.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += IDLE.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += PACK.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += CSTY.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += LSCR.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2855,7 +2855,7 @@ void TES5File::VisitRecords(const uint32_t &RecordType, RecordOp &op)
         // HAZD.pool.VisitRecords(op);
         break;
     case REV32(IDLE):
-        // IDLE.pool.VisitRecords(op);
+        IDLE.pool.VisitRecords(op);
         break;
     case REV32(IDLM):
         // IDLM.pool.VisitRecords(op);
