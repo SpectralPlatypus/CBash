@@ -28,7 +28,6 @@ ENDIF ()
 
 option(BUILD_SHARED_LIBS "Build a shared library" OFF)
 option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
-option(CBASH_NO_BOOST_ZLIB "Build with external Zlib" ON)
 
 
 file (GLOB_RECURSE CBASH_FONV "${CMAKE_CURRENT_SOURCE_DIR}/src/FalloutNewVegas/*.cpp")

@@ -601,8 +601,8 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
         case eIgMOVT:
         case REV32(MOVT):
-            buffer_position = group_buffer_end;
-            //MOVT.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            MOVT.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
       //case eIgMSTT:           // Same as REV32(MSTT)
         case REV32(MSTT):
@@ -960,8 +960,10 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
         return HAZD.pool.used_object_capacity();
     case REV32(HDPT):
         return HDPT.pool.used_object_capacity();
+	*/
     case REV32(IDLE):
         return IDLE.pool.used_object_capacity();
+	/*
     case REV32(IDLM):
         return IDLM.pool.used_object_capacity();
     case REV32(IMAD):
@@ -1021,9 +1023,9 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
     */
 	case REV32(MISC):
         return MISC.pool.used_object_capacity();
-	/*
     case REV32(MOVT):
         return MOVT.pool.used_object_capacity();
+	/*
     case REV32(MSTT):
         return MSTT.pool.used_object_capacity();
     case REV32(MUSC):
@@ -1905,10 +1907,12 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         HAZD.pool.destroy(curRecord);
         return 1;
+	*/
     case REV32(IDLE):
         deindexer.Accept(curRecord);
         IDLE.pool.destroy(curRecord);
         return 1;
+	/*
     case REV32(IDLM):
         deindexer.Accept(curRecord);
         IDLM.pool.destroy(curRecord);
@@ -2047,11 +2051,11 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         MISC.pool.destroy(curRecord);
         return 1;
-	/*
 	case REV32(MOVT):
         deindexer.Accept(curRecord);
         MOVT.pool.destroy(curRecord);
         return 1;
+	/*
     case REV32(MSTT):
         deindexer.Accept(curRecord);
         MSTT.pool.destroy(curRecord);
@@ -2515,7 +2519,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     formCount += OTFT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += ARTO.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += MATO.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += MOVT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += MOVT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // HAZD - Skyrim.esm has a second GRUP here with no records
     // formCount += SNDR.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += DUAL.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2632,7 +2636,7 @@ void TES5File::VisitAllRecords(RecordOp &op)
     // MESG.pool.VisitRecords(op);
     // MGEF.pool.VisitRecords(op);
     MISC.pool.VisitRecords(op);
-    // MOVT.pool.VisitRecords(op);
+    MOVT.pool.VisitRecords(op);
     // MSTT.pool.VisitRecords(op);
     // MUSC.pool.VisitRecords(op);
     // MUST.pool.VisitRecords(op);
@@ -2930,7 +2934,7 @@ void TES5File::VisitRecords(const uint32_t &RecordType, RecordOp &op)
         MISC.pool.VisitRecords(op);
         break;
     case REV32(MOVT):
-        // MOVT.pool.VisitRecords(op);
+        MOVT.pool.VisitRecords(op);
         break;
     case REV32(MSTT):
         // MSTT.pool.VisitRecords(op);

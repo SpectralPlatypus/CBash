@@ -115,7 +115,7 @@
 // #include "Records/MESGRecord.h"
 #include "Records/MGEFRecord.h"
 #include "Records/MISCRecord.h"
-// #include "Records/MOVTRecord.h"
+#include "Records/MOVTRecord.h"
 // #include "Records/MSTTRecord.h"
 // #include "Records/MUSCRecord.h"
 // #include "Records/MUSTRecord.h"
@@ -244,7 +244,7 @@ class TES5File : public ModFile
         // GRUP(MESG);
         GRUP(MGEF);
         GRUP(MISC);
-        // GRUP(MOVT);
+        GRUP(MOVT);
         // GRUP(MSTT);
         // GRUP(MUSC);
         // GRUP(MUST);
