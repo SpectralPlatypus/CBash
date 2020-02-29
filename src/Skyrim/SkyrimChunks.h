@@ -269,6 +269,7 @@ struct SKCondition
     bool operator ==(const SKCondition &other) const;
     bool operator !=(const SKCondition &other) const;
 };
+SIZE_CHECK(SKCondition, 48);
 
 
 struct SKEFIT

@@ -37,19 +37,19 @@
 // BaseRecord.h
 #include "../../Common.h"
 #include "../../GenericChunks.h"
-#include "MOVTRecord.h"
+#include "SOUNRecord.h"
 #include <vector>
 
 namespace Sk {
 
 
-	MOVTRecord::MOVTRecord(unsigned char *_recData) :
+	SOUNRecord::SOUNRecord(unsigned char *_recData) :
         TES5Record(_recData)
     {
         //
     }
 
-	MOVTRecord::MOVTRecord(MOVTRecord *srcRecord) :
+	SOUNRecord::SOUNRecord(SOUNRecord *srcRecord) :
         TES5Record()
     {
         if (srcRecord == NULL)
@@ -63,9 +63,10 @@ namespace Sk {
         versionControl2[1] = srcRecord->versionControl2[1];
         
         EDID = srcRecord->EDID;
-        MNAM = srcRecord->MNAM;
-		ESPED = srcRecord->ESPED;
-		INAM = srcRecord->INAM;
+		FNAM = srcRecord->FNAM;
+		OBND = srcRecord->OBND;
+		SNDD = srcRecord->SNDD;
+		SDSC = srcRecord->SDSC;
 
         recData = srcRecord->recData;
         if (!srcRecord->IsChanged())
@@ -74,31 +75,33 @@ namespace Sk {
         return;
     }
 
-	MOVTRecord::~MOVTRecord()
+	SOUNRecord::~SOUNRecord()
     {
         //
     }
 
-    uint32_t MOVTRecord::GetType()
+    uint32_t SOUNRecord::GetType()
     {
-        return REV32(MOVT);
+        return REV32(SOUN);
     }
 
-    char * MOVTRecord::GetStrType()
+    char * SOUNRecord::GetStrType()
     {
-        return "MOVT";
+        return "SOUN";
     }
 
 
-    bool MOVTRecord::VisitFormIDs(FormIDOp &op)
+    bool SOUNRecord::VisitFormIDs(FormIDOp &op)
     {
         if (!IsLoaded())
             return false;
 
+		op.Accept(SDSC.value);
+
         return op.Stop();
     }
 
-    int32_t MOVTRecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk)
+    int32_t SOUNRecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk)
     {
         uint32_t subType = 0;
         uint32_t subSize = 0;
@@ -127,18 +130,18 @@ namespace Sk {
             case REV32(EDID):
                 EDID.Read(buffer, subSize, CompressedOnDisk);
                 break;
-
-            case REV32(MNAM):
-				MNAM.Read(buffer, subSize, CompressedOnDisk);
-                break;
-
-            case REV32(SPED):
-				ESPED.Read(buffer, subSize);
-                break;
-
-            case REV32(INAM):
-				INAM.Read(buffer, subSize);
-                break;
+			case REV32(OBND):
+				OBND.Read(buffer, subSize);
+				break;
+			case REV32(FNAM):
+				FNAM.Read(buffer, subSize, CompressedOnDisk);
+				break;
+			case REV32(SNDD):
+				SNDD.Read(buffer, subSize);
+				break;
+			case REV32(SDSC):
+				SDSC.Read(buffer, subSize);
+				break;
 
             default:
                 CBASH_SUBTYPE_UNKNOWN
@@ -150,46 +153,49 @@ namespace Sk {
         return 0;
     }
 
-    int32_t MOVTRecord::Unload()
+    int32_t SOUNRecord::Unload()
     {
         IsChanged(false);
         IsLoaded(false);
 
 
-        EDID.Unload();
-		MNAM.Unload();
-		ESPED.Unload();
-		INAM.Unload();
+		EDID.Unload();
+		OBND.Unload();
+		FNAM.Unload();
+		SNDD.Unload();
+		SDSC.Unload();
 
         return 1;
     }
 
-    int32_t MOVTRecord::WriteRecord(FileWriter &writer)
+    int32_t SOUNRecord::WriteRecord(FileWriter &writer)
     {
         WRITE(EDID);
-        WRITE(MNAM);
-		ESPED.Write(REV32(SPED), writer);
-		WRITE(INAM);
+        WRITE(OBND);
+		WRITE(FNAM);
+		WRITE(SNDD);
+		WRITE(SDSC);
         return -1;
     }
 
-    bool MOVTRecord::operator ==(const MOVTRecord &other) const
+    bool SOUNRecord::operator ==(const SOUNRecord &other) const
     {
         return (EDID.equalsi(other.EDID) &&
-			MNAM.equals(other.MNAM) &&
-            ESPED == other.ESPED &&
-			INAM == other.INAM
+			OBND == other.OBND &&
+			FNAM.equals(other.FNAM) &&
+			SNDD == other.SNDD &&
+			SDSC == other.SDSC
             );
     }
 
-    bool MOVTRecord::operator !=(const MOVTRecord &other) const
+    bool SOUNRecord::operator !=(const SOUNRecord &other) const
     {
         return !(*this == other);
     }
 
-    bool MOVTRecord::equals(Record *other)
+    bool SOUNRecord::equals(Record *other)
     {
-        return *this == *(MOVTRecord *)other;
+        return *this == *(SOUNRecord *)other;
     }
 
 }

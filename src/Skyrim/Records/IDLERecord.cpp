@@ -183,7 +183,6 @@ int32_t IDLERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
 				else {
 					current_condition->CIS2.Read(buffer, subSize, CompressedOnDisk);
 				}
-
 				break;
 			case REV32(DNAM):
 				DNAM.Read(buffer, subSize, CompressedOnDisk);
@@ -227,7 +226,7 @@ int32_t IDLERecord::Unload()
 int32_t IDLERecord::WriteRecord(FileWriter &writer)
     {
     WRITE(EDID);
-    WRITE(CTDA);
+    CTDA.Write(writer);
     WRITE(DNAM);
 	WRITE(ENAM);
 	WRITE(ANAM);

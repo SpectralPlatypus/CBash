@@ -37,19 +37,19 @@
 // BaseRecord.h
 #include "../../Common.h"
 #include "../../GenericChunks.h"
-#include "MOVTRecord.h"
+#include "SNDRRecord.h"
 #include <vector>
 
 namespace Sk {
 
 
-	MOVTRecord::MOVTRecord(unsigned char *_recData) :
+	SNDRRecord::SNDRRecord(unsigned char *_recData) :
         TES5Record(_recData)
     {
         //
     }
 
-	MOVTRecord::MOVTRecord(MOVTRecord *srcRecord) :
+	SNDRRecord::SNDRRecord(SNDRRecord *srcRecord) :
         TES5Record()
     {
         if (srcRecord == NULL)
@@ -61,11 +61,16 @@ namespace Sk {
         formVersion = srcRecord->formVersion;
         versionControl2[0] = srcRecord->versionControl2[0];
         versionControl2[1] = srcRecord->versionControl2[1];
-        
+
         EDID = srcRecord->EDID;
-        MNAM = srcRecord->MNAM;
-		ESPED = srcRecord->ESPED;
-		INAM = srcRecord->INAM;
+		CNAM = srcRecord->CNAM;
+		GNAM = srcRecord->GNAM;
+		SNAM = srcRecord->SNAM;
+		FNAM = srcRecord->FNAM;
+		ANAM = srcRecord->ANAM;
+		CTDA = srcRecord->CTDA;
+		LNAM = srcRecord->LNAM;
+		BNAM = srcRecord->BNAM;
 
         recData = srcRecord->recData;
         if (!srcRecord->IsChanged())
@@ -74,36 +79,42 @@ namespace Sk {
         return;
     }
 
-	MOVTRecord::~MOVTRecord()
+	SNDRRecord::~SNDRRecord()
     {
         //
     }
 
-    uint32_t MOVTRecord::GetType()
+    uint32_t SNDRRecord::GetType()
     {
-        return REV32(MOVT);
+        return REV32(SNDR);
     }
 
-    char * MOVTRecord::GetStrType()
+    char * SNDRRecord::GetStrType()
     {
-        return "MOVT";
+        return "SNDR";
     }
 
 
-    bool MOVTRecord::VisitFormIDs(FormIDOp &op)
+    bool SNDRRecord::VisitFormIDs(FormIDOp &op)
     {
         if (!IsLoaded())
             return false;
 
+		op.Accept(GNAM.value);
+		if (SNAM.IsLoaded() && SNAM.value != NULL)
+			op.Accept(*SNAM.value);
+		op.Accept(ONAM.value);
+
         return op.Stop();
     }
 
-    int32_t MOVTRecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk)
+    int32_t SNDRRecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer, bool CompressedOnDisk)
     {
         uint32_t subType = 0;
         uint32_t subSize = 0;
 		uint32_t nextSubType = 0;
         SKCondition *current_condition = NULL;
+		StringRecord* this_ANAM = NULL;
 
         while (buffer < end_buffer){
             subType = *(uint32_t *)buffer;
@@ -127,18 +138,63 @@ namespace Sk {
             case REV32(EDID):
                 EDID.Read(buffer, subSize, CompressedOnDisk);
                 break;
+			case REV32(CNAM):
+				CNAM.Read(buffer, subSize);
+				break;
+			case REV32(GNAM):
+				GNAM.Read(buffer, subSize);
+				break;
+			case REV32(SNAM):
+				SNAM.Read(buffer, subSize);
+				break;
+			case REV32(FNAM):
+				FNAM.Read(buffer, subSize, CompressedOnDisk);
+				break;
+			case REV32(ANAM):
+				this_ANAM = new StringRecord(); 
+				this_ANAM->Read(buffer, subSize, CompressedOnDisk);
+				ANAM.push_back(*this_ANAM);
+				delete this_ANAM;
+				break;
+			case REV32(ONAM):
+				ONAM.Read(buffer, subSize);
+				break;
+			case REV32(CTDA):
+				current_condition = new SKCondition();
+				CTDA.value.push_back(current_condition);
+				current_condition->CTDA.Read(buffer, subSize);
+				break;
+			case REV32(CIS1):
+				if (current_condition == NULL) {
+					printer("  INFO: %08X - Reading CIS1 without current_condition set\n", formID);
+					CBASH_CHUNK_DEBUG
+						printer("  Size = %i\n", subSize);
+					printer("  CurPos = %08x\n\n", buffer - 6);
+					buffer = end_buffer;
+				}
+				else {
+					current_condition->CIS1.Read(buffer, subSize, CompressedOnDisk);
+				}
 
-            case REV32(MNAM):
-				MNAM.Read(buffer, subSize, CompressedOnDisk);
-                break;
+				break;
 
-            case REV32(SPED):
-				ESPED.Read(buffer, subSize);
-                break;
-
-            case REV32(INAM):
-				INAM.Read(buffer, subSize);
-                break;
+			case REV32(CIS2):
+				if (current_condition == NULL) {
+					printer("  INFO: %08X - Reading CIS2 without current_condition set\n", formID);
+					CBASH_CHUNK_DEBUG
+						printer("  Size = %i\n", subSize);
+					printer("  CurPos = %08x\n\n", buffer - 6);
+					buffer = end_buffer;
+				}
+				else {
+					current_condition->CIS2.Read(buffer, subSize, CompressedOnDisk);
+				}
+			case REV32(LNAM):
+				LNAM.Read(buffer, subSize);
+				break;
+			case REV32(BNAM):
+				BNAM.Read(buffer, subSize);
+				break;
 
             default:
                 CBASH_SUBTYPE_UNKNOWN
@@ -150,46 +206,68 @@ namespace Sk {
         return 0;
     }
 
-    int32_t MOVTRecord::Unload()
+    int32_t SNDRRecord::Unload()
     {
         IsChanged(false);
         IsLoaded(false);
 
-
-        EDID.Unload();
-		MNAM.Unload();
-		ESPED.Unload();
-		INAM.Unload();
+		EDID.Unload();
+		CNAM.Unload();
+		GNAM.Unload();
+		SNAM.Unload();
+		FNAM.Unload();
+		for (auto& anam : ANAM) {
+			anam.Unload();
+		}
+		ONAM.Unload();
+		CTDA.Unload();
+		LNAM.Unload();
+		BNAM.Unload();
 
         return 1;
     }
 
-    int32_t MOVTRecord::WriteRecord(FileWriter &writer)
+    int32_t SNDRRecord::WriteRecord(FileWriter &writer)
     {
+
         WRITE(EDID);
-        WRITE(MNAM);
-		ESPED.Write(REV32(SPED), writer);
-		WRITE(INAM);
+        WRITE(CNAM);
+		WRITE(GNAM);
+		WRITE(SNAM);
+		WRITE(FNAM);
+		for (auto& anam : ANAM) {
+			anam.Write(REV32(ANAM),writer);
+		}		
+		WRITE(ONAM);
+		CTDA.Write(writer);
+		WRITE(LNAM);
+		WRITE(BNAM);
         return -1;
     }
 
-    bool MOVTRecord::operator ==(const MOVTRecord &other) const
+    bool SNDRRecord::operator ==(const SNDRRecord &other) const
     {
         return (EDID.equalsi(other.EDID) &&
-			MNAM.equals(other.MNAM) &&
-            ESPED == other.ESPED &&
-			INAM == other.INAM
+			CNAM == other.CNAM &&
+			GNAM == other.GNAM &&
+			SNAM == other.SNAM &&
+			FNAM.equals(other.FNAM) &&
+			std::equal(ANAM.begin(), ANAM.end(), other.ANAM.begin(), other.ANAM.end(), [](const StringRecord& a, const StringRecord& b) {return a.equals(b); }) &&
+			ONAM == other.ONAM &&
+			CTDA == other.CTDA &&
+			LNAM == other.LNAM &&
+			BNAM == other.BNAM
             );
     }
 
-    bool MOVTRecord::operator !=(const MOVTRecord &other) const
+    bool SNDRRecord::operator !=(const SNDRRecord &other) const
     {
         return !(*this == other);
     }
 
-    bool MOVTRecord::equals(Record *other)
+    bool SNDRRecord::equals(Record *other)
     {
-        return *this == *(MOVTRecord *)other;
+        return *this == *(SNDRRecord *)other;
     }
 
 }

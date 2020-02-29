@@ -738,8 +738,8 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
         case eIgSNDR:
         case REV32(SNDR):
-            buffer_position = group_buffer_end;
-            //SNDR.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            SNDR.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
         case eIgSOPM:
         case REV32(SOPM):
@@ -748,8 +748,7 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
         case eIgSOUN:
         case REV32(SOUN):
-            buffer_position = group_buffer_end;
-            //SOUN.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            SOUN.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
       //case eIgSPEL:           // Same as REV32(SPEL)
         case REV32(SPEL):
@@ -1087,13 +1086,15 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
         return SMQN.pool.used_object_capacity();
     case REV32(SNCT):
         return SNCT.pool.used_object_capacity();
+		*/
     case REV32(SNDR):
         return SNDR.pool.used_object_capacity();
+		/*
     case REV32(SOPM):
         return SOPM.pool.used_object_capacity();
+		*/
     case REV32(SOUN):
         return SOUN.pool.used_object_capacity();
-		*/
     case REV32(SPEL):
         return SPEL.pool.used_object_capacity();
 	/*
@@ -1237,7 +1238,10 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
         return WOOP.pool.construct(SourceRecord, this, true);
     case REV32(WRLD):
         return WRLD.wrld_pool.construct(SourceRecord, this, true);
-
+	case REV32(MOVT):
+		return MOVT.pool.construct(SourceRecord, this, true);
+	case REV32(SNDR):
+		return SNDR.pool.construct(SourceRecord, this, true);
     /*
     case REV32(GMST):
         if(RecordEditorID == NULL && SourceRecord == NULL)
@@ -1273,8 +1277,10 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
         return EYES.pool.construct(SourceRecord, this, true);
     case REV32(RACE):
         return RACE.pool.construct(SourceRecord, this, true);
+		*/
     case REV32(SOUN):
         return SOUN.pool.construct(SourceRecord, this, true);
+		/*
     case REV32(MGEF):
         return MGEF.pool.construct(SourceRecord, this, true);
     case REV32(SCPT):
@@ -2227,19 +2233,21 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         SNCT.pool.destroy(curRecord);
         return 1;
+		*/
     case REV32(SNDR):
         deindexer.Accept(curRecord);
         SNDR.pool.destroy(curRecord);
         return 1;
+		/*
     case REV32(SOPM):
         deindexer.Accept(curRecord);
         SOPM.pool.destroy(curRecord);
         return 1;
+		*/
     case REV32(SOUN):
         deindexer.Accept(curRecord);
         SOUN.pool.destroy(curRecord);
         return 1;
-	*/
 	case REV32(SPEL):
         deindexer.Accept(curRecord);
         SPEL.pool.destroy(curRecord);
@@ -2422,7 +2430,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     // HAIR - Skyrim.esm has an empty GRUP for these
     // formCount += EYES.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += RACE.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += SOUN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += SOUN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += ASPC.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += MGEF.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // SCPT - Skyrim.esm has an empty GRUP for these
@@ -2521,7 +2529,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     // formCount += MATO.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += MOVT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // HAZD - Skyrim.esm has a second GRUP here with no records
-    // formCount += SNDR.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += SNDR.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += DUAL.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += SNCT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += SOPM.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2611,7 +2619,7 @@ void TES5File::VisitAllRecords(RecordOp &op)
     // GMST.pool.VisitRecords(op);
     // GRAS.pool.VisitRecords(op);
     // HAZD.pool.VisitRecords(op);
-    // IDLE.pool.VisitRecords(op);
+    IDLE.pool.VisitRecords(op);
     // IDLM.pool.VisitRecords(op);
     // IMAD.pool.VisitRecords(op);
     // IMGS.pool.VisitRecords(op);
@@ -2664,9 +2672,9 @@ void TES5File::VisitAllRecords(RecordOp &op)
     // SMEN.pool.VisitRecords(op);
     // SMQN.pool.VisitRecords(op);
     // SNCT.pool.VisitRecords(op);
-    // SNDR.pool.VisitRecords(op);
+    SNDR.pool.VisitRecords(op);
     // SOPM.pool.VisitRecords(op);
-    // SOUN.pool.VisitRecords(op);
+    SOUN.pool.VisitRecords(op);
     SPEL.pool.VisitRecords(op);
     // SPGD.pool.VisitRecords(op);
     // STAT.pool.VisitRecords(op);
@@ -3018,13 +3026,13 @@ void TES5File::VisitRecords(const uint32_t &RecordType, RecordOp &op)
         // SNCT.pool.VisitRecords(op);
         break;
     case REV32(SNDR):
-        // SNDR.pool.VisitRecords(op);
+        SNDR.pool.VisitRecords(op);
         break;
     case REV32(SOPM):
         // SOPM.pool.VisitRecords(op);
         break;
     case REV32(SOUN):
-        // SOUN.pool.VisitRecords(op);
+        SOUN.pool.VisitRecords(op);
         break;
     case REV32(SPEL):
         SPEL.pool.VisitRecords(op);

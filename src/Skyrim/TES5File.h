@@ -143,9 +143,9 @@
 // #include "Records/SMENRecord.h"
 // #include "Records/SMQNRecord.h"
 // #include "Records/SNCTRecord.h"
-// #include "Records/SNDRRecord.h"
+#include "Records/SNDRRecord.h"
 // #include "Records/SOPMRecord.h"
-// #include "Records/SOUNRecord.h"
+#include "Records/SOUNRecord.h"
 #include "Records/SPELRecord.h"
 // #include "Records/SPGDRecord.h"
 // #include "Records/STATRecord.h"
@@ -272,9 +272,9 @@ class TES5File : public ModFile
         // GRUP(SMEN);
         // GRUP(SMQN);
         // GRUP(SNCT);
-        // GRUP(SNDR);
+        GRUP(SNDR);
         // GRUP(SOPM);
-        // GRUP(SOUN);
+        GRUP(SOUN);
         GRUP(SPEL);
         // GRUP(SPGD);
         // GRUP(STAT);

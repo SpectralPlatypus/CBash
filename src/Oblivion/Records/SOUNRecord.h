@@ -42,6 +42,25 @@ namespace Ob
 class SOUNRecord : public Record
     {
     private:
+		/*
+		Minimum Attenuation Distance	uint8	Multiplied by 5.
+Maximum Attenuation Distancce	uint8	Multiplied by 100.
+Frequency Adjustment Percentage	int8	 
+Unused	byte	 
+Flags	uint32	See below for values.
+Static Attenuation cdB	int16	 
+Stop Time	uint8	 
+Start Time	uint8	 
+Attenuation Point 1	int16	The first point on the attenuation curve.
+Attenuation Point 2	int16	The second point on the attenuation curve.
+Attenuation Point 3	int16	The third point on the attenuation curve.
+Attenuation Point 4	int16	The fourth point on the attenuation curve.
+Attenuation Point 5	int16	The fifth point on the attenuation curve.
+Reverb Attenuation Control	int16	 
+Priority	int32	 
+Unknown	byte[8]
+		*/
+
         struct SOUNSNDX
             {
             uint8_t   minDistance, maxDistance;
@@ -58,6 +77,8 @@ class SOUNRecord : public Record
             bool operator ==(const SOUNSNDX &other) const;
             bool operator !=(const SOUNSNDX &other) const;
             };
+
+		static_assert(sizeof(SOUNSNDX) == 12, "ERROR");
 
         enum flagsFlags
             {

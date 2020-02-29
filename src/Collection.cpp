@@ -1026,7 +1026,7 @@ int32_t Collection::CleanModMasters(ModFile *curModFile)
     curModFile->VisitAllRecords(collector);
 
     uint32_t cleaned = 0;
-    for(size_t ListIndex = curModFile->TES4.MAST.size() - 1; ListIndex >= 0 ; --ListIndex)
+    for(int64_t ListIndex = curModFile->TES4.MAST.size() - 1; ListIndex >= 0; --ListIndex)
         {
         if(collector.collector.UsedTable[ListIndex] == 0)
             {

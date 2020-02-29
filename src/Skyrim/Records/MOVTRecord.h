@@ -171,8 +171,7 @@ namespace Sk {
     public:
         StringRecord EDID; //Editor ID
 		StringRecord MNAM; //Behavior Movement state variable name (without iState prefix)
-		SemiOptSubRecord<MOVTSPED> SPED; //44-byte struct or 40-byte struct if INAM not specified.
-		SemiOptSubRecord<EMOVTSPED> ESPED;
+		ReqSubRecord<EMOVTSPED> ESPED;
 		OptSubRecord<MOVTINAM> INAM; //12-byte struct
 
 		
