@@ -1026,15 +1026,18 @@ int32_t Collection::CleanModMasters(ModFile *curModFile)
     curModFile->VisitAllRecords(collector);
 
     uint32_t cleaned = 0;
-    for(int64_t ListIndex = curModFile->TES4.MAST.size() - 1; ListIndex >= 0; --ListIndex)
-        {
-        if(collector.collector.UsedTable[ListIndex] == 0)
-            {
-            delete []curModFile->TES4.MAST[ListIndex];
-            curModFile->TES4.MAST.erase(curModFile->TES4.MAST.begin() + ListIndex);
-            cleaned++;
-            }
-        }
+	if (curModFile->TES4.MAST.size() > 0)
+	{
+		for (int64_t ListIndex = curModFile->TES4.MAST.size() - 1; ListIndex >= 0; --ListIndex)
+		{
+			if (collector.collector.UsedTable[ListIndex] == 0)
+			{
+				delete[]curModFile->TES4.MAST[ListIndex];
+				curModFile->TES4.MAST.erase(curModFile->TES4.MAST.begin() + ListIndex);
+				cleaned++;
+			}
+		}
+	}
     if(cleaned > 0)
         curModFile->FormIDHandler.UpdateFormIDLookup();
     return cleaned;
