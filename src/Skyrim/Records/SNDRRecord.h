@@ -103,9 +103,9 @@ namespace Sk {
 		ReqSubRecord<uint32_t> CNAM; //hkCRC32 hash of the class name (i.e. "BGSStandardSoundDef").
 		ReqSubRecord<FORMID> GNAM; //Sound Category (SNCT) formid
 		OptSubRecord<FORMID> SNAM; //reference to another (SNDR) formid
-		StringRecord FNAM; //tesvedit
 		std::vector<StringRecord> ANAM; //path to.wav
 		ReqSubRecord<FORMID> ONAM; //Output Model (SOPM) formid
+		StringRecord FNAM; //tesvedit	
 		UnorderedSparseArray<SKCondition*> CTDA; //Conditions
 		OptSubRecord<SNDRLNAM> LNAM; //struct
 		ReqSubRecord<SNDRBNAM> BNAM; //struct

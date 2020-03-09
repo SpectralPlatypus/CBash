@@ -66,8 +66,9 @@ namespace Sk {
 		CNAM = srcRecord->CNAM;
 		GNAM = srcRecord->GNAM;
 		SNAM = srcRecord->SNAM;
-		FNAM = srcRecord->FNAM;
 		ANAM = srcRecord->ANAM;
+		ONAM = srcRecord->ONAM;
+		FNAM = srcRecord->FNAM;	
 		CTDA = srcRecord->CTDA;
 		LNAM = srcRecord->LNAM;
 		BNAM = srcRecord->BNAM;
@@ -234,11 +235,11 @@ namespace Sk {
         WRITE(CNAM);
 		WRITE(GNAM);
 		WRITE(SNAM);
-		WRITE(FNAM);
 		for (auto& anam : ANAM) {
-			anam.Write(REV32(ANAM),writer);
-		}		
+			anam.Write(REV32(ANAM), writer);
+		}
 		WRITE(ONAM);
+		WRITE(FNAM);
 		CTDA.Write(writer);
 		WRITE(LNAM);
 		WRITE(BNAM);

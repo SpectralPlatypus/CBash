@@ -65,7 +65,7 @@ add_definitions(-DCBASH_NO_BOOST_ZLIB)
 
 # Include source and library directories.
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
-                     ${ZLIB_INCLUDE_DIR})
+                     ${ZLIB_INCLUDE_DIRS})
 
 
 ##############################
@@ -105,6 +105,7 @@ ENDIF ()
 ##############################
 
 # Build CBash.
+message("Building")
 add_library           (CBash STATIC ${CBASH_SRC})
 add_dependencies	  (CBash zlib)
 target_link_libraries (CBash ${ZLIB_LIBRARIES})
