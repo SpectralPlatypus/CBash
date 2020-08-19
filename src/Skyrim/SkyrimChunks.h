@@ -269,7 +269,7 @@ struct SKCondition
     bool operator ==(const SKCondition &other) const;
     bool operator !=(const SKCondition &other) const;
 };
-SIZE_CHECK(SKCondition, 48);
+SIZE_CHECK(SKCondition, 64);//WTM:  Was 48.  I wish I could ask Aerisarn why this line was added.
 
 
 struct SKEFIT
