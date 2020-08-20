@@ -263,8 +263,8 @@ namespace Skyblivion {
 		edidMap->insert(std::pair<std::string, FORMID>(std::string("tes4effectinvi"), 0x1EA6A));
 		//edidMap->insert(std::pair<std::string, FORMID>(std::string("effectslnc"), 0x35)); //Illusion removed and so was silencing.
 
-		TES5File *mod = this->getGeckFile();
-		FormIDResolver collapser(mod->FormIDHandler.CollapseTable, mod->FormIDHandler.FileStart, mod->FormIDHandler.FileEnd);
+		TES5File *geckFile = this->getGeckFile();
+		FormIDResolver collapser(geckFile->FormIDHandler.CollapseTable, geckFile->FormIDHandler.FileStart, geckFile->FormIDHandler.FileEnd);
     
 		/**
 		 * Edid map in SkyblivionConverter is collapsed automatically into Geck context
@@ -780,16 +780,16 @@ namespace Skyblivion {
         std::vector<Sk::DLBRRecord*> branchVector;
         std::vector<Sk::DIALRecord*> * dialogueVector = new std::vector<Sk::DIALRecord *>();
 
-		TES4File* oblivionMod = this->getOblivionFile();
-		TES5File* skyrimMod = this->getGeckFile();
-        ModFile* skyblivionMod = this->getSkyblivionFile();
-		oblivionMod->DIAL.dial_pool.MakeRecordsVector(dialogues);
+		TES4File* oblivionFile = this->getOblivionFile();
+        ModFile* skyblivionFile = this->getSkyblivionFile();
+		TES5File* geckFile = this->getGeckFile();
+		oblivionFile->DIAL.dial_pool.MakeRecordsVector(dialogues);
 
 		std::vector<Record*, std::allocator<Record*>> qustVector;
 		std::map<FORMID, Ob::QUSTRecord*> quests;
 		std::vector<Record*, std::allocator<Record*>> scripts;
-		oblivionMod->SCPT.pool.MakeRecordsVector(scripts);
-		oblivionMod->QUST.pool.MakeRecordsVector(qustVector);
+		oblivionFile->SCPT.pool.MakeRecordsVector(scripts);
+		oblivionFile->QUST.pool.MakeRecordsVector(qustVector);
 
 
 		/**
@@ -865,14 +865,14 @@ namespace Skyblivion {
 							//Assign a new formid
 							if (!map->isMapped) {
 								//Map the current questFormid aka the first quest
-								dialogueToConvert = this->skyrimCollection.NextFreeExpandedFormID(skyblivionMod);
+								dialogueToConvert = this->skyrimCollection.NextFreeExpandedFormID(skyblivionFile);
 								map->qstiToFormid->insert(std::pair<FORMID, FORMID>(firstQuestFormid, dialogueToConvert));
 								map->isMapped = true; //To avoid regeneration for 3 and more quests :)
 							}
 
 							//And the current one if its needed
 							if (map->qstiToFormid->find(info->QSTI.value) == map->qstiToFormid->end()) {
-								dialogueToConvert = this->skyrimCollection.NextFreeExpandedFormID(skyblivionMod);
+								dialogueToConvert = this->skyrimCollection.NextFreeExpandedFormID(skyblivionFile);
 								map->qstiToFormid->insert(std::pair<FORMID, FORMID>(info->QSTI.value, dialogueToConvert));
 							}
 							
@@ -971,9 +971,9 @@ namespace Skyblivion {
 						/**
 						 * If INFO is blocking, then we assume that we can generate a new FORMID. Those ( blocking ) branches should not be referenced in dialogues anyways, so probably all TCLT choices
 						 * to "GREETING"s ( whatever that might be ), will probably end up to mapped non-blocking branches.
-						 * God, it's complicated.
+						 * It's complicated.
 						 */
-						dialFormid = this->skyrimCollection.NextFreeExpandedFormID(skyblivionMod);
+						dialFormid = this->skyrimCollection.NextFreeExpandedFormID(skyblivionFile);
 					}
                     else if (formidWasMapped) {
 						dialFormid = (*dialogueToConvertData->qstiToFormid)[info->QSTI.value];
@@ -1202,7 +1202,7 @@ namespace Skyblivion {
 						char *cstr = new char[EDID.length() + 1];
 						strncpy(cstr, EDID.c_str(), EDID.length() + 1);
 						newBranch->EDID.value = cstr;
-						newBranch->formID = this->skyrimCollection.NextFreeExpandedFormID(skyblivionMod);
+						newBranch->formID = this->skyrimCollection.NextFreeExpandedFormID(skyblivionFile);
 						newBranch->formVersion = 43;
 						newBranch->SNAM.value = dialFormid;
 						newBranch->TNAM.value = 0;
@@ -1394,7 +1394,7 @@ namespace Skyblivion {
         }
 
         for (uint32_t i = 0; i < branchVector.size(); i++) {
-            skyrimMod->DLBR.pool.construct(branchVector.at(i), NULL, false);
+            geckFile->DLBR.pool.construct(branchVector.at(i), NULL, false);
         }
 
 		return dialogueVector;
@@ -1403,14 +1403,15 @@ namespace Skyblivion {
 
 	void SkyblivionConverter::addSOUNFromSNDR()
 	{
-		TES5File* skyblivion = this->getSkyblivionFile();
+		TES5File* skyblivionFile = this->getSkyblivionFile();
+		ModFile* skyblivionFileMod = skyblivionFile;
+		TES5File* geckFile = this->getGeckFile();
 		std::vector<Record*, std::allocator<Record*>> skyrimSNDRRecords;
-		skyblivion->SNDR.pool.MakeRecordsVector(skyrimSNDRRecords);
+		skyblivionFile->SNDR.pool.MakeRecordsVector(skyrimSNDRRecords);
 		std::vector<Record*, std::allocator<Record*>> skyrimSOUNRecords;
-		skyblivion->SOUN.pool.MakeRecordsVector(skyrimSOUNRecords);
-		TES5File* geck = this->getGeckFile();
+		skyblivionFile->SOUN.pool.MakeRecordsVector(skyrimSOUNRecords);
 		std::vector<Record*, std::allocator<Record*>> modSOUNRecords;
-		geck->SOUN.pool.MakeRecordsVector(modSOUNRecords);
+		geckFile->SOUN.pool.MakeRecordsVector(modSOUNRecords);
 		Sk::SNDRRecord* foundSNDR = NULL;
 		for (uint32_t it = 0; it < skyrimSNDRRecords.size(); ++it) {
 			Sk::SNDRRecord* sndr = (Sk::SNDRRecord*)(skyrimSNDRRecords)[it];
@@ -1435,9 +1436,8 @@ namespace Skyblivion {
 				newEDID.append(unprefixedSNDREDID);
 				char* newEDIDCharString = new char[newEDID.length() + 1];
 				strncpy(newEDIDCharString, newEDID.c_str(), newEDID.length() + 1);
-				ModFile* skyblivionModFile = this->getSkyblivionFile();
 				Sk::SOUNRecord* soun = new Sk::SOUNRecord();
-				soun->formID = this->skyrimCollection.NextFreeExpandedFormID(skyblivionModFile);
+				soun->formID = this->skyrimCollection.NextFreeExpandedFormID(skyblivionFileMod);
 				soun->formVersion = 43;
 				soun->EDID.value = newEDIDCharString;
 				soun->SDSC.value = sndr->formID;
@@ -1446,7 +1446,7 @@ namespace Skyblivion {
 			}
 		}
 		for (uint32_t i = 0; i < modSOUNRecords.size(); i++) {
-			geck->SOUN.pool.construct(modSOUNRecords.at(i), NULL, false);
+			geckFile->SOUN.pool.construct(modSOUNRecords.at(i), NULL, false);
 		}
 	}
 
@@ -1575,7 +1575,9 @@ namespace Skyblivion {
         std::string fullScript(scriptData);
         delete[] scriptData;
 
-        boost::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?");
+		TES5File* skyblivionFile = this->getSkyblivionFile();
+		
+		boost::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?");
 
         boost::sregex_iterator properties(fullScript.begin(), fullScript.end(), propRegex, boost::match_not_dot_newline);
         boost::sregex_iterator end;
@@ -1675,11 +1677,10 @@ namespace Skyblivion {
 				}
 				*/
 				//WTM:  Change:
-				TES5File* skyblivion = this->getSkyblivionFile();
 				std::vector<Record*, std::allocator<Record*>> skyrimSNDRRecords;
-				skyblivion->SNDR.pool.MakeRecordsVector(skyrimSNDRRecords);
+				skyblivionFile->SNDR.pool.MakeRecordsVector(skyrimSNDRRecords);
 				std::vector<Record*, std::allocator<Record*>> skyrimSOUNRecords;
-				skyblivion->SOUN.pool.MakeRecordsVector(skyrimSOUNRecords);
+				skyblivionFile->SOUN.pool.MakeRecordsVector(skyrimSOUNRecords);
 				int tes5SNDRFormID = tes4FormID != 0 ? convertFormid(tes4FormID) : 0;
 				Sk::SNDRRecord* foundSNDR = NULL;
 				for (uint32_t it = 0; it < skyrimSNDRRecords.size(); ++it) {
@@ -3194,6 +3195,5 @@ One of the following scripts is apparently supposed to move the quest to stage 2
 The assassin behind the trap door is 0501e703.  Use console prid 0501e703 to disable and enable him if needed.
 
 Tasks for Later:
-add SOUN records from SNDR records
 associate MessageBoxes
 */
