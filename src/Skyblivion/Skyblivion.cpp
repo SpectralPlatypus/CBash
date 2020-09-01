@@ -2627,7 +2627,7 @@ namespace Skyblivion {
 		case 362: { skyrimIndice = 339; break;  }
         case 259: { throw std::runtime_error("Not implemented in Skyrim"); }
         case 258: { throw std::runtime_error("Not implemented in Skyrim"); }
-		case 40: { skyrimIndice = 226; break;  }
+		case 40: { skyrimIndice = 71; parameterOne = 0x01033F53; break; } //force tes4vampire faction check //{ skyrimIndice = 226; break;  }
         case 109: { throw std::runtime_error("Not implemented in Skyrim"); }
         case 227: {  skyrimIndice = 226; break; } //Inaccurate?
         case 313: { throw std::runtime_error("Not implemented in Skyrim"); }
@@ -3181,7 +3181,6 @@ namespace Skyblivion {
 Manual Changes for TES4Charactergen:
 TES4CGSewerExitGate01's script's message box property must be associated with the correct message box.
 Renote's stage 18 package (TES4CGRenoteOpenSecretDoor) "Once per Day" should be unchecked.
-Optional:  Baurus's stage 26 package probably needs to be set to follow Uriel Septim.
 
 Manual Changes for TES4Charactergen for Others:
 The AI for Glenroy, Renote and Baurus is set to Unaggressive.  This needs to be changed to Aggressive.
