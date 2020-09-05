@@ -1991,50 +1991,47 @@ namespace Skyblivion {
             dstRecord.PKCU->versionCounter = 8;
             dstRecord.versionControl2[0] = 0x0F;
             Sk::PACKRecord::PACKPLDT location = convertLocationType(srcRecord);
-            dstRecord.addLocationTemplateSetting(location, 0);
-            dstRecord.addBoolTemplateSetting(true, 15);
+            dstRecord.addLocationTemplateSetting(location, 0);//Eat Location
+            dstRecord.addBoolTemplateSetting(true, 21);//Unlock On Arrival?
 
             try{
 
                 Sk::PACKRecord::PACKPTDA food;
 
-                if (!srcRecord.PTDT.IsLoaded()) {
+				if (!srcRecord.PTDT.IsLoaded()) {
                     //Standard food targetSelector
                     food = Sk::PACKRecord::PACKPTDA();
                     food.targetType = 2;
-                    food.targetId = 0x14;
-                    food.targetCount = 1;
+                    food.targetId = 15;//Object Type on this page: https://en.uesp.net/wiki/Tes5Mod:Mod_File_Format/PACK (Only 11 is considered known.) 
+                    food.targetCount = 1;//https://en.uesp.net/wiki/Tes5Mod:Mod_File_Format/PACK:  "Count (0 in all Skyrim records)"
                 }
                 else {
                     food = convertTargetType(srcRecord);
                 }
+                dstRecord.addTargetTemplateSetting("TargetSelector", food, 1);//Food Criteria
 
-                Sk::PACKRecord::PACKPTDA chairsTarget = Sk::PACKRecord::PACKPTDA();
-                chairsTarget.targetCount = 1;
-                chairsTarget.targetType = 2;
-                chairsTarget.targetId = 0x1b;
-
-                dstRecord.addTargetTemplateSetting("TargetSelector", food, 1);
-
-                dstRecord.addObjectListTemplateSetting(0, 4); //Found food.
-                dstRecord.addTargetTemplateSetting("TargetSelector", chairsTarget, 5); //Allow sitting
-                dstRecord.addObjectListTemplateSetting(0, 6); //Found food.
-
-                dstRecord.addIntTemplateSetting(1, 0xa);
-                dstRecord.addBoolTemplateSetting(true, 0xc); //Allow already held food to be eaten?
-                dstRecord.addBoolTemplateSetting(false, 0x10); //ride horself? wtf
-                dstRecord.addBoolTemplateSetting(false, 0xe); //Allow sitting
-                dstRecord.addBoolTemplateSetting(true, 0x17); //Create fake food?
-                dstRecord.addBoolTemplateSetting(true, 0x19); //Allow eating
-                dstRecord.addBoolTemplateSetting(false, 0x1a); //Allow sleeping
-                dstRecord.addBoolTemplateSetting(true, 0x1b); //Allow conversation
-                dstRecord.addBoolTemplateSetting(true, 0x1c); //ALlow idle markers
-                dstRecord.addBoolTemplateSetting(true, 0x21); //Allow special furniture
-                dstRecord.addBoolTemplateSetting(true, 0x1d); //Allow sitting
-                dstRecord.addBoolTemplateSetting(true, 0x1e); //Allow wandering
-                dstRecord.addFloatTemplateSetting(300, 0x23); //Min wander distance
-                dstRecord.addBoolTemplateSetting(false, 0x8); //Wander pref path only?
-                dstRecord.addFloatTemplateSetting(0, 0x20); //Energy
+                dstRecord.addObjectListTemplateSetting(0, 4);//Found Food
+				Sk::PACKRecord::PACKPTDA chairsTarget = Sk::PACKRecord::PACKPTDA();
+				chairsTarget.targetCount = 1;
+				chairsTarget.targetType = 2;
+				chairsTarget.targetId = 0x1b;
+                dstRecord.addTargetTemplateSetting("TargetSelector", chairsTarget, 5);//Chair Target
+                dstRecord.addObjectListTemplateSetting(0, 6);//Found Chair
+                dstRecord.addIntTemplateSetting(1, 10);//NumFoodItems
+                dstRecord.addBoolTemplateSetting(true, 12);//AllowAlreadyHeld
+                dstRecord.addBoolTemplateSetting(false, 16);//RideHorseIfPossible
+                dstRecord.addBoolTemplateSetting(false, 14);//False
+                dstRecord.addBoolTemplateSetting(true, 23);//CreateFakeFood
+                dstRecord.addBoolTemplateSetting(true, 25);//AllowEating
+                dstRecord.addBoolTemplateSetting(false, 26);//AllowSleeping
+                dstRecord.addBoolTemplateSetting(true, 27);//AllowConversation
+                dstRecord.addBoolTemplateSetting(true, 28);//AllowIdleMarkers
+                dstRecord.addBoolTemplateSetting(true, 33);//AllowSpecialFurniture
+                dstRecord.addBoolTemplateSetting(true, 29);//AllowSitting
+                dstRecord.addBoolTemplateSetting(true, 30);//AllowWandering
+                dstRecord.addFloatTemplateSetting(300, 35);//MinWanderDistance
+                dstRecord.addBoolTemplateSetting(false, 8);//Wander Preferred Path Only?
+                dstRecord.addFloatTemplateSetting(0, 32);//Energy
 
                 if ((srcRecord.PKDT.value.flags & 0x1F8) != 0) {
                     // Handle Un/Locking
@@ -2043,16 +2040,16 @@ namespace Skyblivion {
                     if (formid != NULL) {
                         dstRecord.PKCU->packageTemplate = formid;
                         dstRecord.PKCU->dataInputCount += 7;
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtStart(), 0x24); //Lock at Start?
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtLocation(), 0x25); //Lock at Location?
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtEnd(), 0x26); //Lock at End?
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtStart(), 0x27); //Unlock at Start?
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtLocation(), 0x28); //Unlock at Location?
-                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtEnd(), 0x29); //Unlock at End?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtStart(), 36); //Lock at Start?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtLocation(), 37); //Lock at Location?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtEnd(), 38); //Lock at End?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtStart(), 39); //Unlock at Start?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtLocation(), 40); //Unlock at Location?
+                        dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtEnd(), 41); //Unlock at End?
                         Sk::PACKRecord::PACKPLDT pldt;
                         pldt.locRadius = 1000;
                         pldt.locType = 12;
-                        dstRecord.addLocationTemplateSetting(pldt, 0x2a); //Near self
+                        dstRecord.addLocationTemplateSetting(pldt, 42); //Near self
                     }
                 }
             }
