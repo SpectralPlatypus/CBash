@@ -2461,7 +2461,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     formCount += AMMO.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += NPC_.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += LVLN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += KEYM.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += KEYM.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);//WTM:  Change:  Uncommented line.
     formCount += ALCH.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += IDLM.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += COBJ.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);

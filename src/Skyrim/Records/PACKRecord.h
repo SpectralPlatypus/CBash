@@ -83,8 +83,20 @@ namespace Sk
 				PACKPLDT();
 				~PACKPLDT();
 
-				bool operator ==(const PACKPLDT &other) const;
-				bool operator !=(const PACKPLDT &other) const;
+				bool operator ==(const PACKPLDT& other) const;
+				bool operator !=(const PACKPLDT& other) const;
+			};
+
+			struct PACKPDTO //Topic//WTM:  Added
+			{
+				int32_t  topicType;
+				char  topicValue[5];
+
+				PACKPDTO();
+				~PACKPDTO();
+
+				bool operator ==(const PACKPDTO& other) const;
+				bool operator !=(const PACKPDTO& other) const;
 			};
 
 			struct PACKPRCB {
@@ -101,6 +113,7 @@ namespace Sk
 				float writtenFloat;
 				PACKPLDT writtenPLDT;
 				PACKPTDA writtenPTDA;
+				PACKPDTO writtenPDTO;//WTM:  Added
 			
 		};
 			
@@ -162,6 +175,10 @@ namespace Sk
                             memcpy(&p.writtenPTDA, buffer, subSize);
                         }
 
+						if (strcmp(lastANAM, "Topic") == 0) {//WTM:  Added
+							memcpy(&p.writtenPDTO, buffer, subSize);
+						}
+
                         cnamData.push_back(p);
                         buffer += subSize;
 
@@ -216,6 +233,13 @@ namespace Sk
 								int sizeData = sizeof(cnamData[i].writtenPTDA);
 								writer.record_write_subheader(REV32(PTDA), sizeData);
 								writer.record_write(&cnamData[i].writtenPTDA, sizeData);
+							}
+
+							if (stringData == "Topic") {
+								//int sizeData = sizeof(cnamData[i].writtenPDTO);
+								const int sizeData = 8;
+								writer.record_write_subheader(REV32(PDTO), sizeData);
+								writer.record_write(&cnamData[i].writtenPDTO, sizeData);
 							}
 
 						}
@@ -492,6 +516,7 @@ namespace Sk
 		void addFloatTemplateSetting(float setting, int unamRecordIndex);
 		void addTargetTemplateSetting(char * name, PACKPTDA target, int unamRecordIndex);
 		void addObjectListTemplateSetting(float setting, int unamRecordIndex);
+		void addTopicTemplateSetting(PACKRecord::PACKPDTO topic, int unamRecordIndex);//WTM:  Added
 
 
 		//uint32_t GetFieldAttribute(DEFAULTED_FIELD_IDENTIFIERS, uint32_t WhichAttribute=0);

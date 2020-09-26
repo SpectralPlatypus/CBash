@@ -207,8 +207,8 @@ namespace Sk
         WRITE(EDID);
         WRITE(VMAD);
         WRITE(OBND);
+        WRITE(FULL);//WTM:  Change:  I switched this line and the one below it to fix warnings in SSEEdit.
         MODL.Write(writer);
-        WRITE(FULL);
         WRITE(YNAM);
         WRITE(ZNAM);
         WRITE(KWDA);

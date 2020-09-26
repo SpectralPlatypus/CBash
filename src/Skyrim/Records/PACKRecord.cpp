@@ -109,6 +109,30 @@ bool PACKRecord::PACKPLDT::operator !=(const PACKPLDT &other) const
     return !(*this == other);
     }
 
+//WTM:  Added:  PTDO
+PACKRecord::PACKPDTO::PACKPDTO() :
+    topicType(1),
+    topicValue("HELO")
+{
+    //
+}
+
+PACKRecord::PACKPDTO::~PACKPDTO()
+{
+    //
+}
+
+bool PACKRecord::PACKPDTO::operator ==(const PACKPDTO& other) const
+{
+    return (topicType == other.topicType &&
+        topicValue == other.topicValue);
+}
+
+bool PACKRecord::PACKPDTO::operator !=(const PACKPDTO& other) const
+{
+    return !(*this == other);
+}
+
 PACKRecord::PACKPSDT::PACKPSDT():
     month(0),
     day(0),

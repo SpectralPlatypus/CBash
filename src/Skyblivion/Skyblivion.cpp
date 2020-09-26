@@ -43,6 +43,7 @@
 #include <iomanip>
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <fstream>
 #include "../Common.h"
 #include "Skyblivion.h"
 #include "../Oblivion/Records/DIALRecord.h"
@@ -54,6 +55,8 @@
 #include "../Skyrim/VMAD/Property/PropertyObject.h"
 #include "../Skyrim/VMAD/Fragment/FragmentQUST.h"
 #include "../Skyrim/VMAD/Fragment/FragmentINFO.h"
+#include "CELLToLCTNMap.h"
+#include "DIALToGLOBMap.h"
 
 #define RUMORS_FORMID 0xD7
 #define GOODBYE_FORMID 0xD4
@@ -68,7 +71,7 @@ namespace Skyblivion {
 	skyrimCollection(skyrimCollection)
 	{
 		this->edidMap = this->prepareSkyblivionEdidMap();
-		this->oldTopicFromIDToNewTopicFormID = new std::map <FORMID, FORMID>();
+		this->oldTopicFormIDToNewTopicFormID = new std::map <FORMID, FORMID>();
 		this->targetsMapping = this->getTargetsMappingTable();
 		this->getOblivionFile()->SCPT.pool.MakeRecordsVector(this->scripts);		
 	}
@@ -86,10 +89,20 @@ namespace Skyblivion {
 		return NULL;
 	}
 
-
-	void SkyblivionConverter::insertToOldTopicFormIDToNewTopicFormID(FORMID oldFormID, FORMID newFormID)//WTM:  Change:  Added
+	std::string SkyblivionConverter::getEDIDByFormID(FORMID formID)//WTM:  Added
 	{
-		this->oldTopicFromIDToNewTopicFormID->insert(std::pair<FORMID, FORMID>(oldFormID, newFormID));
+		auto it = (*this->edidMap).begin();
+		while (it != (*this->edidMap).end())
+		{
+			if (it->second == formID) { return it->first; }
+			it++;
+		}
+		throw new std::runtime_error("No record with a form ID " + std::to_string(formID) + " could be found.");
+	}
+
+	void SkyblivionConverter::insertToOldTopicFormIDToNewTopicFormID(FORMID oldFormID, FORMID newFormID)//WTM:  Added
+	{
+		this->oldTopicFormIDToNewTopicFormID->insert(std::pair<FORMID, FORMID>(oldFormID, newFormID));
 	}
 
 	Record * SkyblivionConverter::findRecordByFormidGeneric(FORMID_OR_UINT32 formid)
@@ -805,6 +818,7 @@ namespace Skyblivion {
 		//Because out of one Oblivion DIAL there might be N Skyrim DIALs, we cannot simply use DIAL formids. We need to map them
 		//This map has all formids within the conversion process, however, if formid is not mapped ( i.e. there's one quest and we dont need to split the record ), then we'll save the same formid as original
 		std::map<FORMID, dialogueToConvert *> formidMapping = std::map<FORMID, dialogueToConvert *>();
+		DIALToGLOBMap dialToGLOBMap = DIALToGLOBMap();
 		for (uint32_t dialoguesIt = 0; dialoguesIt < dialogues.size(); ++dialoguesIt) {
 			Ob::DIALRecord *d = (Ob::DIALRecord*)dialogues[dialoguesIt];
 		    try {
@@ -905,6 +919,8 @@ namespace Skyblivion {
 			
 			Sk::DIALRecord* currentDialForInfo;
 
+			FORMID conditionGlobalVariableFormID = dialToGLOBMap.getGLOBFormID(d->formID);
+
 			for(uint32_t infoIt = 0; infoIt < d->INFO.size(); ++infoIt) {
 
 				Ob::INFORecord* info = (Ob::INFORecord*)d->INFO[infoIt];
@@ -921,7 +937,8 @@ namespace Skyblivion {
 					if (info->TCLT.value.size() > 0) {
 						targetShardingCollection = &blockingFormidToPointer;
 						isInfoBlocking = true;
-						presetInfoFlags |= 0x2; //We will want a random on this, because HELO has native randomization of greetings, however, custom branches have to be randomized explicitly.
+						//WTM:  Change:  I commented the below line as requested by jadkai.
+						//presetInfoFlags |= 0x2; //We will want a random on this, because HELO has native randomization of greetings, however, custom branches have to be randomized explicitly.
 					}
 
 					/**
@@ -1337,14 +1354,14 @@ namespace Skyblivion {
 
                 }
 
-				if (currentDialForInfo->SNAM.value == REV32(HIT_)) {
-					Sk::SKCondition *condition = new Sk::SKCondition();
-					condition->CTDA->ifunc = 72;
-					condition->CTDA->operType = 0;
+				if (currentDialForInfo->SNAM.value == REV32(HIT_)) {//WTM:  I tried commenting this as oracus0's requested, but crashes remained.
+					Sk::SKCondition *condition = new Sk::SKCondition();//Subject.GetIsID(PlayerNPC) == 0
+					condition->CTDA->ifunc = 72;//GetIsID
+					condition->CTDA->operType = 0;//Equals
 					condition->CTDA->compValue = 0;
-					condition->CTDA->param1 = 0x7; //NPC player ref
+					condition->CTDA->param1 = 0x7;//Player NPC
 					condition->CTDA->param2 = 0;
-					condition->CTDA->runOnType = 0;
+					condition->CTDA->runOnType = 0;//Subject
 
 					newInfo->CTDA.value.push_back(
 						condition
@@ -1356,7 +1373,14 @@ namespace Skyblivion {
                     try {
                         std::vector<Sk::SKCondition*> skCTDAs = convertCTDAFromOblivion(info->CTDA.value[i]);
 						for (int ctdaIt = 0; ctdaIt < skCTDAs.size(); ++ctdaIt) {
-							newInfo->CTDA.value.push_back(skCTDAs[ctdaIt]);
+							Sk::SKCondition* condition = skCTDAs[ctdaIt];
+							Sk::SKCTDA ctda = condition->CTDA.value;
+							//Target.GetIsID(Player) == 1
+							bool isTarget_GetIsID_PlayerNPC_Equals_1 = ctda.runOnType == 1/*Target*/ && ctda.ifunc == 72/*GetIsID*/ && ctda.param1 == 7/*Player NPC*/ && ctda.compValue == 0x3f800000/*1 as a float*/;
+							if (!isTarget_GetIsID_PlayerNPC_Equals_1)
+							{//At jadkai's request, don't include Target.GetIsID(Player) == 1.
+								newInfo->CTDA.value.push_back(condition);
+							}
 						}
                     }
                     catch (std::exception) {
@@ -1365,24 +1389,57 @@ namespace Skyblivion {
                 }
 
 				for (uint32_t ctdaIt = 0; ctdaIt < newInfo->CTDA.value.size(); ++ctdaIt) {
-					Sk::SKCondition* ctda = newInfo->CTDA.value[ctdaIt];
-					if (ctda->CTDA.value.ifunc == 72) { //get is id.
-						if (ctda->CTDA.value.IsEqual() && ctda->CTDA.value.compValue > 0 || !ctda->CTDA.value.IsEqual() && ctda->CTDA.value.compValue == 0)
-							newInfo->ANAM.value =//Speaker
-								//WTM:  Change:
-								//formID 0102b47d causes CK to crash upon saving,
-								//so I worked around it as Monocleus suggested by
-								//not using the value from Oblivion but instead using Todd's Tester Man.
-								newInfo->
-									formID == 0x0102b47d ? (0x0500089A - 0x04000000) :
-									ctda->CTDA.value.param1;
+					Sk::SKCondition* condition = newInfo->CTDA.value[ctdaIt];
+					Sk::SKCTDA ctda = condition->CTDA.value;
+					if (ctda.ifunc == 72/*GetIsID*/ && ctda.IsEqual() && ctda.compValue > 0 || !ctda.IsEqual() && ctda.compValue == 0)
+					{
+						/*
+						newInfo->ANAM.value =//Speaker
+							//WTM:  Change:
+							//formID 0102b47d causes CK to crash upon saving,
+							//so I worked around it as Monocleus suggested by
+							//not using the value from Oblivion but instead using Todd's Tester Man.
+							newInfo->formID == 0x0102b47d ? 0x0100089A :
+							ctda->CTDA.value.param1;
+						*///WTM:  Change:  jadkai requested Speaker never be set.
 					}
 				}
 
-                //Creating Papyrus fragments
+				if (conditionGlobalVariableFormID != NULL)
+				{
+					Sk::SKCTDA* ctda = new Sk::SKCTDA();
+					ctda->ifunc = 74;//GetGlobalValue
+					ctda->param1 = conditionGlobalVariableFormID;
+					ctda->operType = (0/*Equals*/ << 5) + 0 /*no other flags*/;
+					ctda->compValue = 0x3f800000;//1 as a float
+					Sk::SKCondition* condition = new Sk::SKCondition();
+					condition->CTDA.value = *ctda;
+					newInfo->CTDA.value.insert(newInfo->CTDA.value.begin(), condition);
+				}
 
-                if (info->SCTX.IsLoaded())
+                //Creating Papyrus fragments
+				bool addInfoToBind = false;
+				if (info->SCTX.IsLoaded())
+				{
+					addInfoToBind = true;
+				}
+				else//WTM:  Change:  Added:
+				{
+					std::string tifScriptName = getTIFScriptNameNotExt(info);
+					SkyblivionScript skScript = SkyblivionScript(this->BUILD_TARGET_DIALOGUES(), "", tifScriptName, this->ROOT_BUILD_PATH());
+					std::string tifScriptPath = skScript.getScriptPath();
+					std::ifstream tifFile(tifScriptPath.c_str());
+					bool tifExists = tifFile.good();
+					tifFile.close();
+					if (tifExists)
+					{
+						addInfoToBind = true;
+					}
+				}
+				if (addInfoToBind)
+				{
 					infosToBind[info] = newInfo;
+				}
 
                 currentDialForInfo->INFO.push_back(newInfo);
 
@@ -1515,7 +1572,7 @@ namespace Skyblivion {
 		if (!foundFormIDs.empty())
 		{
 			std::vector<int> foundFormIDsAdjusted = std::vector<int>();
-			for (int i = 0; i < foundFormIDs.size(); i++) { foundFormIDsAdjusted.push_back(foundFormIDs[i] + 0x01000000); }
+			for (int i = 0; i < foundFormIDs.size(); i++) { foundFormIDsAdjusted.push_back(convertFormid(foundFormIDs[i])); }
 			if (foundFormIDsAdjusted.size() == 1)
 			{
 				if (formIDByEDID == 0 || formIDByEDID == foundFormIDsAdjusted[0]) { return foundFormIDsAdjusted[0]; }
@@ -1577,7 +1634,7 @@ namespace Skyblivion {
 
 		TES5File* skyblivionFile = this->getSkyblivionFile();
 		
-		boost::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?");
+		boost::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?(;TES5FormID:([0-9]+);)?");
 
         boost::sregex_iterator properties(fullScript.begin(), fullScript.end(), propRegex, boost::match_not_dot_newline);
         boost::sregex_iterator end;
@@ -1598,6 +1655,12 @@ namespace Skyblivion {
 			if (tes4FormIDString != "")
 			{
 				tes4FormID = std::stoi(tes4FormIDString);
+			}
+			std::string tes5FormIDString = (*properties)[7];
+			int tes5FormID = 0;
+			if (tes5FormIDString != "")
+			{
+				tes5FormID = std::stoi(tes5FormIDString);
 			}
 
 			std::string realPropertyName = propertyName;
@@ -1750,18 +1813,26 @@ namespace Skyblivion {
 						realPropertyEdid = "tes4" + realPropertyEdid;
 					}
 				}
-				if (tes4FormID != 0 || this->edidMap->find(realPropertyEdid) != this->edidMap->end()) {
+				if (tes4FormID != 0 || tes5FormID != 0 || this->edidMap->find(realPropertyEdid) != this->edidMap->end()) {
 
 					uint32_t boundFormid;
-					if (tes4FormID != 0)
+					if (tes4FormID != 0 || tes5FormID != 0)
 					{
 						if (propertyType == "Topic")
 						{
-							boundFormid = (*this->oldTopicFromIDToNewTopicFormID)[tes4FormID];
+							boundFormid = (*this->oldTopicFormIDToNewTopicFormID)[tes4FormID];
+						}
+						else if (tes4FormID != 0)
+						{
+							boundFormid = convertFormid(tes4FormID);
+						}
+						else if (tes5FormID != 0)
+						{
+							boundFormid = tes5FormID;
 						}
 						else
 						{
-							boundFormid = convertFormid(tes4FormID);
+							throw new std::runtime_error("No form ID found.");
 						}
 					}
 					else
@@ -1869,14 +1940,42 @@ namespace Skyblivion {
 
     }
 
+
+	void SkyblivionConverter::convertPACKFromOblivion(TES4File* oblivionMod, TES5File* skyrimMod)
+	{
+		std::vector<Record*, std::allocator<Record*>> packages;
+		oblivionMod->PACK.pool.MakeRecordsVector(packages);
+
+		int count = packages.size();
+
+		int i = 0;
+		for (uint32_t it = 0; it < count; ++it) {
+			Ob::PACKRecord* p = (Ob::PACKRecord*)packages[it];
+
+			try {
+				Sk::PACKRecord* skPack = new Sk::PACKRecord();
+				convertPACKFromOblivion(*p, *skPack);
+				skyrimMod->PACK.pool.construct(skPack, NULL, false);
+			}
+			catch (std::exception& e) {
+				log_warning << e.what() << "\n";
+				continue;
+			}
+
+			++i;
+		}
+	}
+
     void SkyblivionConverter::convertPACKFromOblivion(Ob::PACKRecord& srcRecord, Sk::PACKRecord& dstRecord) {
+
 		if (srcRecord.EDID.IsLoaded()) {
+			std::string tempEDID = srcRecord.EDID.value;
 			std::string newEdid = srcRecord.EDID.value;
 			newEdid = "TES4" + newEdid;
 			dstRecord.EDID.value = new char[newEdid.length() + 1];
 			std::strcpy(dstRecord.EDID.value, newEdid.c_str());
 		}
-        dstRecord.formID = srcRecord.formID + 0x01000000;
+        dstRecord.formID = convertFormid(srcRecord.formID);
         dstRecord.formVersion = 0x28;
 
         for (uint8_t i = 0; i < srcRecord.CTDA.value.size(); ++i) {
@@ -1942,24 +2041,81 @@ namespace Skyblivion {
             dstRecord.addBoolTemplateSetting(false, 8);
         }
         else if (srcRecord.IsAIAmbush()) {
-            //Idk how to handle
-
-			//WTM:  Change:
-			/*
-            dstRecord.PKCU->packageTemplate = 0x010CBE96;
-            dstRecord.PKCU->dataInputCount = 5;
-            dstRecord.PKCU->versionCounter = 2;
-            dstRecord.formVersion = 43;
-            dstRecord.addLocationTemplateSetting(convertLocationType(srcRecord), 0);
-            dstRecord.addTargetTemplateSetting("TargetSelector", convertTargetType(srcRecord), 3);
-            dstRecord.addObjectListTemplateSetting(0, 5);
-            dstRecord.addBoolTemplateSetting(false, 6);
-            dstRecord.addIntTemplateSetting(1, 7);
-			*/
-
-            //0, 3, 5, 6, 7
-            //throw std::exception("Not implemented");
-			dstRecord.PKCU->packageTemplate = 0x0003C1C4;//ForceGreet
+			//WTM:  Change:  I'm going to use ForceGreet if the target is a ACHR or NPC_.
+			Sk::PACKRecord::PACKPLDT triggerLocationPLDT = convertLocationType(srcRecord);
+			Sk::PACKRecord::PACKPTDA pdta = convertTargetType(srcRecord);
+			bool forceGreet = false;
+			if (pdta.targetType == 0 || pdta.targetType == 1)
+			{
+				if (pdta.targetId == 0x14/*PlayerRef*/)
+				{
+					forceGreet = true;
+				}
+				else
+				{
+					Record* targetRecord = findRecordByFormidGeneric(srcRecord.PTDT.value->targetId);
+					if (typeid(*targetRecord) == typeid(Ob::ACHRRecord) || typeid(*targetRecord) == typeid(Ob::NPC_Record))
+					{
+						forceGreet = true;
+					}
+				}
+				if (forceGreet)
+				{
+					dstRecord.PKCU->packageTemplate = 0x0003C1C4;//ForceGreet
+					//WTM:  Change:  I've tried to add very limited PDTO support to CBash so I could convert Ambush to ForceGreet these more accurately.
+					dstRecord.PKCU->dataInputCount = 20;
+					dstRecord.PKCU->versionCounter = 2;
+					dstRecord.formVersion = 43;
+					dstRecord.addTopicTemplateSetting(convertTopicType(srcRecord), 7);//Topic
+					//A default ForceGreet package has trigger location radius of 500 and a wait location radius of 150.
+					//The below shrinks the wait location radius so the ambush package can be most accurately reproduced for ForceGreet.
+					Sk::PACKRecord::PACKPLDT waitLocationPLDT = convertLocationType(srcRecord);
+					waitLocationPLDT.locRadius *= (150 / (float)500);
+					dstRecord.addLocationTemplateSetting(waitLocationPLDT, 8);//NPC Wait Location (NPC hangs out here)
+					dstRecord.addLocationTemplateSetting(triggerLocationPLDT, 62);//Trigger Location (Player here causes forcegreet)
+					Sk::PACKRecord::PACKPLDT radiusPLDT = Sk::PACKRecord::PACKPLDT();
+					radiusPLDT.locType = 0;//Near Reference
+					radiusPLDT.locId = 0x14;//PlayerRef
+					radiusPLDT.locRadius = 300;
+					dstRecord.addLocationTemplateSetting(radiusPLDT, 75);//Forcegreet Distance (Don't change ref, just radius)
+					dstRecord.addBoolTemplateSetting(false, 79);//Player must be detected?
+					dstRecord.addBoolTemplateSetting(true, 65);//Greet Using Preferred Path?
+					Sk::PACKRecord::PACKPTDA ptda = Sk::PACKRecord::PACKPTDA();
+					ptda.targetType = 0;//Specific Reference
+					ptda.targetId = 0x14;//PlayerRef
+					ptda.targetCount = 0;
+					dstRecord.addTargetTemplateSetting("SingleRef", ptda, 17);//Player
+					Sk::PACKRecord::PACKPLDT forceGreetPLDT = Sk::PACKRecord::PACKPLDT();
+					forceGreetPLDT.locType = 0;//Near Reference
+					forceGreetPLDT.locId = 0x14;//PlayerRef
+					forceGreetPLDT.locRadius = 5000;
+					dstRecord.addLocationTemplateSetting(forceGreetPLDT, 22);//ForceGreetLoc
+					dstRecord.addBoolTemplateSetting(false, 26);//AlwaysFalse
+					dstRecord.addBoolTemplateSetting(false, 81);//Forcegreet if player on horseback?
+					dstRecord.addBoolTemplateSetting(false, 40);//Sandbox While Waiting?
+					dstRecord.addBoolTemplateSetting(false, 29);//AllowEating
+					dstRecord.addBoolTemplateSetting(false, 30);//AllowSleeping
+					dstRecord.addBoolTemplateSetting(false, 31);//AllowConversation
+					dstRecord.addBoolTemplateSetting(false, 32);//AllowIdleMarkers
+					dstRecord.addBoolTemplateSetting(false, 33);//AllowSitting
+					dstRecord.addBoolTemplateSetting(false, 34);//AllowWandering
+					dstRecord.addBoolTemplateSetting(false, 36);//WanderPreferredPath
+					dstRecord.addFloatTemplateSetting(50, 67);//Energy
+					dstRecord.addBoolTemplateSetting(false, 69);//Allow Special Furniture?
+				}
+			}
+			if (!forceGreet)
+			{
+				dstRecord.PKCU->packageTemplate = 0x010CBE96;
+				dstRecord.PKCU->dataInputCount = 5;
+				dstRecord.PKCU->versionCounter = 2;
+				dstRecord.formVersion = 43;
+				dstRecord.addLocationTemplateSetting(triggerLocationPLDT, 0);
+				dstRecord.addTargetTemplateSetting("TargetSelector", pdta, 3);
+				dstRecord.addObjectListTemplateSetting(0, 5);
+				dstRecord.addBoolTemplateSetting(false, 6);
+				dstRecord.addIntTemplateSetting(1, 7);
+			}
         }
         else if (srcRecord.IsAICastMagic()) {
 
@@ -2021,7 +2177,7 @@ namespace Skyblivion {
                 dstRecord.addBoolTemplateSetting(true, 12);//AllowAlreadyHeld
                 dstRecord.addBoolTemplateSetting(false, 16);//RideHorseIfPossible
                 dstRecord.addBoolTemplateSetting(false, 14);//False
-                dstRecord.addBoolTemplateSetting(true, 23);//CreateFakeFood
+                dstRecord.addBoolTemplateSetting(false, 23);//CreateFakeFood
                 dstRecord.addBoolTemplateSetting(true, 25);//AllowEating
                 dstRecord.addBoolTemplateSetting(false, 26);//AllowSleeping
                 dstRecord.addBoolTemplateSetting(true, 27);//AllowConversation
@@ -2256,33 +2412,130 @@ namespace Skyblivion {
             }
         }
         else if (srcRecord.IsAITravel()) {
-            dstRecord.PKCU->packageTemplate = 0x00016FAA; //Travel package
-            dstRecord.PKCU->dataInputCount = 3;
-            dstRecord.PKCU->versionCounter = 3;
-            dstRecord.versionControl2[0] = 0x0A;
-            dstRecord.addLocationTemplateSetting(convertLocationType(srcRecord), 0);
-            dstRecord.addBoolTemplateSetting(false, 2);
-            dstRecord.addBoolTemplateSetting(false, 4);
 
-            if ((srcRecord.PKDT.value.flags & 0x1F8) != 0) {
-                // Handle Un/Locking
-                FORMID formid = findRecordFormidByEDID("TES4TravelLockTemplate");
+			//WTM:  Added:  Change:  I'm trying to change these Travel packages to SitTarget packages if the target is a specific chair.
+			bool isSpecificChair = false, isSpecificBed = false;
+			if (srcRecord.PLDT->locId != 0)
+			{
+				Record* locationRecord = findRecordByFormidGeneric(srcRecord.PLDT->locId);
+				if (locationRecord != NULL)
+				{
+					if (typeid(*locationRecord) == typeid(Ob::REFRRecord))
+					{
+						Ob::REFRRecord* locationREFRRecord = (Ob::REFRRecord*)locationRecord;
+						Record* locationREFRName = findRecordByFormidGeneric(locationREFRRecord->Data.value->NAME.value);
+						if (typeid(*locationREFRName) == typeid(Ob::FURNRecord))
+						{
+							Ob::FURNRecord* locationFURNRecord = (Ob::FURNRecord*)locationREFRName;
+							std::string furnEDID = locationFURNRecord->EDID.value;
+							if (furnEDID.find("Chair") != std::string::npos || furnEDID.find("Pew") != std::string::npos || furnEDID.find("Bench") != std::string::npos || furnEDID.find("Throne") != std::string::npos || furnEDID.find("Stool") != std::string::npos)
+							{
+								isSpecificChair = true;
+							}
+							else if (furnEDID.find("Bed"))
+							{
+								isSpecificBed = true;//These might be only bedroll targets.
+							}
+						}
+					}
+					else if (typeid(*locationRecord) == typeid(Ob::ACHRRecord))
+					{
+						Ob::ACHRRecord* locationACHRRecord = (Ob::ACHRRecord*)locationRecord;
+						Record* locationACHRName = findRecordByFormidGeneric(locationACHRRecord->NAME.value);
+						if (typeid(*locationACHRName) != typeid(Ob::NPC_Record))
+						{
+							locationACHRName = locationACHRName;
+						}
+					}
+					else if (typeid(*locationRecord) == typeid(Ob::ACRERecord))
+					{
+						Ob::ACRERecord* locationACRERecord = (Ob::ACRERecord*)locationRecord;
+						Record* locationACREName = findRecordByFormidGeneric(locationACRERecord->NAME.value);
+						if (typeid(*locationACREName) != typeid(Ob::CREARecord))
+						{
+							locationACREName = locationACREName;
+						}
+					}
+					else if (typeid(*locationRecord) == typeid(Ob::FURNRecord))
+					{
+						Ob::FURNRecord* locationFURNRecord = (Ob::FURNRecord*)locationRecord;
+						std::string furnEDID = locationFURNRecord->EDID.value;
+						if (furnEDID.find("Chair") != std::string::npos || furnEDID.find("Pew") != std::string::npos || furnEDID.find("Bench") != std::string::npos || furnEDID.find("Throne") != std::string::npos || furnEDID.find("Stool") != std::string::npos)
+						{
+							isSpecificChair = true;
+						}
+					}
+					else if (typeid(*locationRecord) != typeid(Ob::CELLRecord))
+					{
+						locationRecord = locationRecord;
+					}
+				}
+			}
+			if (isSpecificChair)
+			{
+				dstRecord.PKCU->packageTemplate = 0x000A9277;//SitTarget
+				dstRecord.PKCU->dataInputCount = 3;
+				dstRecord.PKCU->versionCounter = 3;
+				dstRecord.versionControl2[0] = 0x0A;
+				Sk::PACKRecord::PACKPTDA ptda = convertTargetType(srcRecord);
+				dstRecord.addTargetTemplateSetting("SingleRef", ptda, 16);//target
+				dstRecord.addIntTemplateSetting(0, 3);//Wait Time
+				dstRecord.addBoolTemplateSetting(false, 4);//Stop Movement Flag
+			}
+			else if (isSpecificBed)
+			{
+				dstRecord.PKCU->packageTemplate = 0x00019717;//Sleep
+				dstRecord.PKCU->dataInputCount = 16;
+				dstRecord.PKCU->versionCounter = 3;
+				dstRecord.versionControl2[0] = 0x0A;
+				dstRecord.addLocationTemplateSetting(convertLocationType(srcRecord), 0);//Sleep Location
+				dstRecord.addTargetTemplateSetting("TargetSelector", convertTargetType(srcRecord), 0);//Search Criteria:
+				dstRecord.addBoolTemplateSetting(false, 15);//Lock Doors?
+				dstRecord.addBoolTemplateSetting(false, 13);//Warn Before Locking?
+				dstRecord.addBoolTemplateSetting(false, 11);//RideHorseIfPossible
+				dstRecord.addObjectListTemplateSetting(0, 2);//Found Bed
+				dstRecord.addBoolTemplateSetting(false, 8);//False
+				dstRecord.addBoolTemplateSetting(false, 17);//AllowEating
+				dstRecord.addBoolTemplateSetting(true, 18);//AllowSleeping
+				dstRecord.addBoolTemplateSetting(true, 19);//AllowConversation
+				dstRecord.addBoolTemplateSetting(true, 20);//AllowIdleMarkers
+				dstRecord.addBoolTemplateSetting(true, 21);//AllowSitting
+				dstRecord.addBoolTemplateSetting(true, 25);//AllowSpecialFurniture
+				dstRecord.addBoolTemplateSetting(true, 22);//AllowWandering
+				dstRecord.addFloatTemplateSetting(300, 26);//MinWanderDistance
+				dstRecord.addBoolTemplateSetting(false, 6);//Wander Preferred Path Only?
+				dstRecord.addFloatTemplateSetting(50, 24);//Energy
+			}
+			else
+			{
+				dstRecord.PKCU->packageTemplate = 0x00016FAA; //Travel package
+				dstRecord.PKCU->dataInputCount = 3;
+				dstRecord.PKCU->versionCounter = 3;
+				dstRecord.versionControl2[0] = 0x0A;
+				dstRecord.addLocationTemplateSetting(convertLocationType(srcRecord), 0);//Place to Travel
+				dstRecord.addBoolTemplateSetting(false, 2);//Ride Horse if possible?
+				dstRecord.addBoolTemplateSetting(false, 4);//Prefer Preferred Path?
 
-                if (formid != NULL) {
-                    dstRecord.PKCU->packageTemplate = formid;
-                    dstRecord.PKCU->dataInputCount += 7;
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtStart(), 0x5); //Lock at Start?
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtLocation(), 0x6); //Lock at Location?
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtEnd(), 0x7); //Lock at End?
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtStart(), 0x8); //Unlock at Start?
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtLocation(), 0x9); //Unlock at Location?
-                    dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtEnd(), 0xa); //Unlock at End?
-                    Sk::PACKRecord::PACKPLDT pldt;
-                    pldt.locRadius = 1000;
-                    pldt.locType = 12;
-                    dstRecord.addLocationTemplateSetting(pldt, 0xb); //Near self
-                }
-            }
+				if ((srcRecord.PKDT.value.flags & 0x1F8) != 0) {
+					// Handle Un/Locking
+					FORMID formid = findRecordFormidByEDID("TES4TravelLockTemplate");
+
+					if (formid != NULL) {
+						dstRecord.PKCU->packageTemplate = formid;
+						dstRecord.PKCU->dataInputCount += 7;
+						dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtStart(), 0x5); //Lock at Start?
+						dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtLocation(), 0x6); //Lock at Location?
+						dstRecord.addBoolTemplateSetting(srcRecord.IsLockAtEnd(), 0x7); //Lock at End?
+						dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtStart(), 0x8); //Unlock at Start?
+						dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtLocation(), 0x9); //Unlock at Location?
+						dstRecord.addBoolTemplateSetting(srcRecord.IsUnlockAtEnd(), 0xa); //Unlock at End?
+						Sk::PACKRecord::PACKPLDT pldt;
+						pldt.locRadius = 1000;
+						pldt.locType = 12;
+						dstRecord.addLocationTemplateSetting(pldt, 0xb); //Near self
+					}
+				}
+			}
         }
         else if (srcRecord.IsAIUseItemAt()) {
             //Needs to be converted 2 idles i think
@@ -2433,86 +2686,96 @@ namespace Skyblivion {
 
         Sk::PACKRecord::PACKPTDA ptda = Sk::PACKRecord::PACKPTDA();
 
-        if (!p.PTDT.IsLoaded()) {
-            throw std::runtime_error("Trying to convert a target type from an oblivion AIPack that does not have a target type!");
-        }
+		if (p.PTDT.IsLoaded())
+		{
+			ptda.targetCount = p.PTDT->targetCount;
+			ptda.targetType = p.PTDT->targetType;
 
-        ptda.targetCount = p.PTDT->targetCount;
-        ptda.targetType = p.PTDT->targetType;
+			if (ptda.targetType == 2) {
+				//Convert object type.
+				switch (p.PTDT->targetId) {
+				case 0x00: { ptda.targetId = 0x00; break; }
+				case 0xd: { ptda.targetId = 0xb; break; }
+				case 0x04: { ptda.targetId = 0x03; break; }
+				case 0x13: { ptda.targetId = 0x0E; break; }
+				case 0x1b: { ptda.targetId = 0x16; break; }
+				case 0x3: { ptda.targetId = 0x02; break; }
+				case 0x8: { ptda.targetId = 0x06; break; }
+				case 0x5: { ptda.targetId = 0x11; break; }
+				case 0x1d: { ptda.targetId = 0x18; break; }
+				case 0xc: { ptda.targetId = 0x1b; break; }
+				case 0x19: { ptda.targetId = 0x14; break; }
+				case 0xe: { ptda.targetId = 0xc; break; }
+				case 0x17: { ptda.targetId = 0x12; break; }
+				case 0x1e: {
 
-        if (ptda.targetType == 2) {
-            //Convert object type.
-            switch (p.PTDT->targetId) {
-            case 0x00: { ptda.targetId = 0x00; break; }
-            case 0xd: { ptda.targetId = 0xb; break; }
-            case 0x04: { ptda.targetId = 0x03; break; }
-            case 0x13: { ptda.targetId = 0x0E; break; }
-            case 0x1b: { ptda.targetId = 0x16; break; }
-            case 0x3: { ptda.targetId = 0x02; break; }
-            case 0x8: { ptda.targetId = 0x06; break; }
-            case 0x5: { ptda.targetId = 0x11; break; }
-            case 0x1d: { ptda.targetId = 0x18; break; }
-            case 0xc: { ptda.targetId = 0x1b; break; }
-            case 0x19: { ptda.targetId = 0x14; break; }
-            case 0xe: { ptda.targetId = 0xc; break; }
-            case 0x17: { ptda.targetId = 0x12; break; }
-            case 0x1e: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x001076F1; //MagicSchoolAlteration KYWD
+					break;
 
-                           ptda.targetType = 3;
-                           ptda.targetId = 0x001076F1; //MagicSchoolAlteration KYWD
-                           break;
+				}
+				case 0x2: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x010CBE98; //TES4ApparatusKeyword FORMID from Skyblivion
+					break;
+				}
+				case 0x20: {
 
-            }
-            case 0x2: {
-                          ptda.targetType = 3;
-                          ptda.targetId = 0x010CBE98; //TES4ApparatusKeyword FORMID from Skyblivion
-                          break;
-            }
-            case 0x20: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x001076F0; //MagicSchoolDestruction KYWD
+					break;
 
-                           ptda.targetType = 3;
-                           ptda.targetId = 0x001076F0; //MagicSchoolDestruction KYWD
-                           break;
+				}
+				case 0x22: {
 
-            }
-            case 0x22: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x001076F1; //MagicSchoolAlteration ( no mysticism in skyrim .. ) KYWD
+					break;
 
-                           ptda.targetType = 3;
-                           ptda.targetId = 0x001076F1; //MagicSchoolAlteration ( no mysticism in skyrim .. ) KYWD
-                           break;
+				}
+				case 0x1a: { ptda.targetId = 0x15; break; }
+				case 0x21: {
 
-            }
-            case 0x1a: { ptda.targetId = 0x15; break; }
-            case 0x21: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x001076F2; //MagicSchoolIllusion KYWD
+					break;
 
-                           ptda.targetType = 3;
-                           ptda.targetId = 0x001076F2; //MagicSchoolIllusion KYWD
-                           break;
+				}
+				case 0xb: { ptda.targetId = 0x09; break; }
+				case 0x14: { ptda.targetId = 0xf; break; }
+				case 0x06: { ptda.targetId = 0x04; break; }
+				case 0x15: { ptda.targetId = 0x10; break; }
+				case 0x23: {
 
-            }
-            case 0xb: { ptda.targetId = 0x09; break; }
-            case 0x14: { ptda.targetId = 0xf; break; }
-            case 0x06: { ptda.targetId = 0x04; break; }
-            case 0x15: { ptda.targetId = 0x10; break; }
-            case 0x23: {
+					ptda.targetType = 3;
+					ptda.targetId = 0x001076F3; //MagicSchoolRestoration KYWD
+					break;
 
-                           ptda.targetType = 3;
-                           ptda.targetId = 0x001076F3; //MagicSchoolRestoration KYWD
-                           break;
+				}
+				case 0x1c: { ptda.targetId = 0x17; break; }
+				case 0xf/*NPCs*/: { ptda.targetId = 0x19/*Actors: Any*/; break; }
+				}
 
-            }
-            case 0x1c: { ptda.targetId = 0x17; break; }
-            }
-
-        }
-        else if (ptda.targetType == 0 || ptda.targetType == 1 || ptda.targetType == 3) {
-            ptda.targetId = convertFormid(p.PTDT->targetId);
-        }
-        else {
-            ptda.targetId = p.PTDT->targetId;
-        }
-
-
+			}
+			else if (ptda.targetType == 0 || ptda.targetType == 1 || ptda.targetType == 3) {
+				ptda.targetId = convertFormid(p.PTDT->targetId);
+			}
+			else {
+				ptda.targetId = p.PTDT->targetId;
+			}
+		}
+		else
+		{
+			//WTM:  Added:  Change:  Instead of throwing an exception, I'm trying something new.
+			//throw std::runtime_error("Trying to convert a target type from an oblivion AIPack that does not have a target type!");
+			if (!p.PLDT.IsLoaded())
+			{
+				throw std::runtime_error("Trying to convert a target type from an oblivion AIPack that does not have a target type!");
+			}
+			ptda.targetCount = 1;
+			ptda.targetType = 0;
+			ptda.targetId = convertFormid(p.PLDT.value->locId);
+		}
         return ptda;
     }
 
@@ -2522,7 +2785,7 @@ namespace Skyblivion {
             long defaultRadius = 500;
             //if not loaded, then near self.
             Sk::PACKRecord::PACKPLDT pack = Sk::PACKRecord::PACKPLDT();
-            pack.locType = 12;
+            pack.locType = 12;//Near Self
             pack.locId = 0;
             pack.locRadius = defaultRadius;
             return pack;
@@ -2551,6 +2814,13 @@ namespace Skyblivion {
         return pack;
 
     }
+
+	Sk::PACKRecord::PACKPDTO SkyblivionConverter::convertTopicType(Ob::PACKRecord& p) {//WTM:  Added
+
+		Sk::PACKRecord::PACKPDTO pdto = Sk::PACKRecord::PACKPDTO();
+		return pdto;
+
+	}
 
 
     std::vector<Sk::SKCondition*> SkyblivionConverter::convertCTDAFromOblivion(GENCTDA* oCTDA) {
@@ -2620,7 +2890,7 @@ namespace Skyblivion {
         case 201: { throw std::runtime_error("Not implemented in Skyrim"); }
 		case 249: { skyrimIndice = 74; parameterOne = 0x010223C5; break; } //TES4Fame  
 		case 251: { skyrimIndice = 74; parameterOne = 0x011955E4; break; } //TES4Infamy 
-		case 365: { skyrimIndice = 625; parameterOne = 0x01193002; break; }//TES4SEWorldLocation 
+		case 365/*GetPlayerInSEWorld*/: { skyrimIndice = 359/*GetInCurrentLoc*/; parameterOne = 0x01193002/*TES4SEWorldLocation*/; break; }
 		case 362: { skyrimIndice = 339; break;  }
         case 259: { throw std::runtime_error("Not implemented in Skyrim"); }
         case 258: { throw std::runtime_error("Not implemented in Skyrim"); }
@@ -2662,7 +2932,6 @@ namespace Skyblivion {
 			 * GetStage(Q) < N, convert to (IsQuestRunning(Q) == 1 && GetStage(Q) < N)
 			 */
 			/*
-			 * Might be actually bullshit, turning off for now
 			if (oOperType == 8 || oOperType == 10 || (oOperType == 0 && comparisionValue == 0)) {
 				Sk::SKCTDA *isRunning = new Sk::SKCTDA();
 				isRunning->operType = 0;
@@ -3012,6 +3281,12 @@ namespace Skyblivion {
 			skyrimIndice = oCTDA->ifunc;
 			break;
 		}
+		case 67: {//GetInCell
+			skyrimIndice = 359;//GetInCurrentLoc
+			FORMID cellFormID = convertFormid(oCTDA->param1);
+			parameterOne = cellToLCTNMap.getLCTNFormID(cellFormID);
+			break;
+		}
 
         default: { skyrimIndice = oCTDA->ifunc; }
         }
@@ -3042,6 +3317,21 @@ namespace Skyblivion {
 
     }
 
+	std::string SkyblivionConverter::getTIFScriptNameNotExt(Ob::INFORecord* info)
+	{
+		std::string scriptName = "TIF_";
+		if (info->EDID.IsLoaded()) {
+			scriptName.append(info->EDID.value);
+		}
+		scriptName.append("_");
+		char* castedFormid = new char[9];
+		sprintf(castedFormid, "%08x", convertFormid(info->formID));
+		scriptName.append(castedFormid);
+		scriptName = SkyblivionScript::getPrefixedName(TES4_UNDERSCORE_SCRIPT_PREFIX, scriptName);
+		delete castedFormid;
+		return scriptName;
+	}
+
 	void SkyblivionConverter::bindScriptProperties(std::vector<Sk::DIALRecord*>* dialogueVector, std::vector<Sk::QUSTRecord *>* questVector) {
 		TES5File* skyrimMod = (TES5File*)this->skyrimCollection.ModFiles[2];
 
@@ -3051,18 +3341,7 @@ namespace Skyblivion {
 
 			Script* TIFScript = new Script();
 
-			std::string TIFScriptName = "TIF_";
-
-			if (info->EDID.IsLoaded()) {
-				TIFScriptName.append(info->EDID.value);
-			}
-
-			TIFScriptName.append("_");
-			char* castedFormid = new char[9];
-			sprintf(castedFormid, "%08x", info->formID + 0x01000000);
-			TIFScriptName.append(castedFormid);
-			TIFScriptName = SkyblivionScript::getPrefixedName(TES4_UNDERSCORE_SCRIPT_PREFIX, TIFScriptName);
-			delete castedFormid;
+			std::string TIFScriptName = getTIFScriptNameNotExt(info);
 
 			char* cpyTwo = new char[TIFScriptName.size() + 1];
 			strcpy(cpyTwo, TIFScriptName.c_str());
@@ -3176,7 +3455,6 @@ namespace Skyblivion {
 }
 /*
 Manual Changes for TES4Charactergen:
-TES4CGSewerExitGate01's script's message box property must be associated with the correct message box.
 Renote's stage 18 package (TES4CGRenoteOpenSecretDoor) "Once per Day" should be unchecked.
 
 Manual Changes for TES4Charactergen for Others:
@@ -3189,7 +3467,4 @@ One of the following scripts is apparently supposed to move the quest to stage 2
 	TES4_tif__01025df0.psc
 	TES4_tif__0105144a.psc
 The assassin behind the trap door is 0501e703.  Use console prid 0501e703 to disable and enable him if needed.
-
-Tasks for Later:
-associate MessageBoxes
 */

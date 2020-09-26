@@ -88,4 +88,12 @@ namespace Sk
 		TDAT.unamData.push_back(unamRecordIndex);
 	}
 
+	void PACKRecord::addTopicTemplateSetting(PACKRecord::PACKPDTO topic, int unamRecordIndex) {//WTM:  Added
+		PACKACTIVITY p = PACKACTIVITY();
+		p.writtenPDTO = topic;
+		TDAT.ANAM.push_back("Topic");
+		TDAT.cnamData.push_back(p);
+		TDAT.unamData.push_back(unamRecordIndex);
+	}
+
 }

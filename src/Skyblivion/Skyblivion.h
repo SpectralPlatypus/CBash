@@ -46,6 +46,7 @@
 #include "../Skyrim/SkyrimChunks.h"
 #include "../Collection.h"
 #include "md5.h"
+#include "CELLToLCTNMap.h"
 
 namespace Skyblivion {
 
@@ -125,6 +126,7 @@ namespace Skyblivion {
 	private:
 		Sk::PACKRecord::PACKPTDA convertTargetType(Ob::PACKRecord &p);
 		Sk::PACKRecord::PACKPLDT convertLocationType(Ob::PACKRecord &p);
+		Sk::PACKRecord::PACKPDTO convertTopicType(Ob::PACKRecord& p);//WTM:  Added
 
 		/**
 		 * Converts a formid from Oblivion's collection to Skyblivion's ESM
@@ -256,7 +258,7 @@ namespace Skyblivion {
 		const std::string rootBuildPath;
 		std::map<std::string, uint32_t> *edidMap;
 		std::map<std::string, std::map<uint32_t, uint32_t> *> *targetsMapping;
-		std::map<FORMID, FORMID>* oldTopicFromIDToNewTopicFormID;//WTM:  Change:  Added
+		std::map<FORMID, FORMID>* oldTopicFormIDToNewTopicFormID;//WTM:  Change:  Added
 		Collection &oblivionCollection;
 		Collection &skyrimCollection;
 		std::vector<Record*, std::allocator<Record*>> scripts;
@@ -282,11 +284,13 @@ namespace Skyblivion {
 		SkyblivionScript getSkyblivionScript(Ob::SCPTRecord* scpt);//WTM:  Change:  Added
 		Script* createVirtualMachineScriptBySkyblivionScript(SkyblivionScript skScript);//WTM:  Change:  Added
 		Script* createVirtualMachineScriptFor(Ob::SCPTRecord* scpt);
+		void convertPACKFromOblivion(TES4File* oblivionMod, TES5File* skyrimMod);
 		void convertPACKFromOblivion(Ob::PACKRecord& srcRecord, Sk::PACKRecord& dstRecord);
 		std::vector<Sk::SKCondition*> convertCTDAFromOblivion(GENCTDA* srcRecord);
         std::vector <Sk::DIALRecord*> * convertDIALFromOblivion();
         std::vector <Sk::QUSTRecord*> * convertQUSTFromOblivion();
 		int getReferenceFormID(Record* record, std::string realPropertyEdid, std::string hardcodedFilename);
+		std::string getTIFScriptNameNotExt(Ob::INFORecord* info);
 		void bindProperties(Script* script, SkyblivionScript &skScript);
 		void bindScriptProperties(std::vector<Sk::DIALRecord*>* dialogueVector, std::vector<Sk::QUSTRecord *>* questVector);
 
@@ -296,6 +300,7 @@ namespace Skyblivion {
 
 		void insertToEdidMap(std::string edid, FORMID formid);
 		FORMID findRecordFormidByEDID(std::string edid);
+		std::string getEDIDByFormID(FORMID formID);//WTM:  Change:  Added
 		
 		TES4File *getOblivionFile() { return (TES4File*)this->oblivionCollection.ModFileByName("Oblivion.esm"); }
 		TES5File *getSkyrimFile() { return (TES5File*)this->skyrimCollection.ModFileByName("Skyrim.esm"); }
@@ -311,6 +316,7 @@ namespace Skyblivion {
 
 		void addSOUNFromSNDR();//WTM:  Change:  Added
 		void insertToOldTopicFormIDToNewTopicFormID(FORMID oldFormID, FORMID newFormID);//WTM:  Change:  Added
+		CELLToLCTNMap cellToLCTNMap;//WTM:  Change:  Added
 	};
 
 }

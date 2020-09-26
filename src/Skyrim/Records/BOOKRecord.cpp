@@ -137,6 +137,7 @@ namespace Sk
         while (buffer < end_buffer) {
             subType = *(uint32_t *)buffer;
             buffer += 4;
+            bool isEmptyDESC = false;//WTM:  Change:  I added this to work around a problem CBash has with reading Skyblivion.esm, possibly due to a Skyblivion.esm data error.
             switch (subType)
             {
             case REV32(XXXX):
@@ -148,7 +149,14 @@ namespace Sk
                 break;
             default:
                 subSize = *(uint16_t *)buffer;
-                buffer += 2;
+                if (subType == REV32(DESC) && subSize == 0)
+                {
+                    isEmptyDESC = true;
+                }
+                else
+                {
+                    buffer += 2;
+                }
                 break;
             }
             switch (subType)
@@ -179,6 +187,10 @@ namespace Sk
                 break;
             case REV32(DESC):
                 DESC.Read(buffer, subSize, CompressedOnDisk, LookupStrings);
+                if (isEmptyDESC)
+                {
+                    buffer += 2;
+                }
                 break;
             case REV32(DEST):
                 DEST.Read(buffer, subSize);
