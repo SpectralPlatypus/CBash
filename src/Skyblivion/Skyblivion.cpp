@@ -615,10 +615,16 @@ namespace Skyblivion {
 
             for (uint8_t i = 0; i < q->CTDA.value.size(); ++i) {
                 try {
-					std::vector<Sk::SKCondition*>  skCTDAs = convertCTDAFromOblivion(q->CTDA.value[i]);
+					GENCTDA* ctda = q->CTDA.value[i];
+					//Subject.GetIsPlayableRace(None) == 1
+					bool isSubject_GetIsPlayableRace_Equals_1 = ctda->operType == 0/*Subject*/ && ctda->ifunc == 254/*GetIsPlayableRace*/ && ctda->param1 != 0/*None*/ && ctda->compValue == 0x3f800000/*1 as a float*/;
+					if (!isSubject_GetIsPlayableRace_Equals_1)
+					{
+						std::vector<Sk::SKCondition*>  skCTDAs = convertCTDAFromOblivion(ctda);
 
-					for (int ctdaIt = 0; ctdaIt < skCTDAs.size(); ++ctdaIt) {
-						skq->QDCTDA.value.push_back(skCTDAs[ctdaIt]);
+						for (int ctdaIt = 0; ctdaIt < skCTDAs.size(); ++ctdaIt) {
+							skq->QDCTDA.value.push_back(skCTDAs[ctdaIt]);
+						}
 					}
                 }
                 catch (std::exception) {

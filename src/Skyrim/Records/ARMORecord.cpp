@@ -376,7 +376,7 @@ namespace Sk
         WRITE(BAMT);
         WRITE(RNAM);
         WRITE(KWDA);
-        WRITE(DESC);//WTM:  Change:  Commented because Skyrim fails to read DESC after CBash reads writes it to GECK.esp.
+        WRITE(DESC);
         WRITE(MODL);
         WRITE(DATA);
         WRITE(DNAM);
