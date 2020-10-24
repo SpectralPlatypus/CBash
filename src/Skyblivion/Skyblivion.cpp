@@ -617,7 +617,7 @@ namespace Skyblivion {
                 try {
 					GENCTDA* ctda = q->CTDA.value[i];
 					//Subject.GetIsPlayableRace(None) == 1
-					bool isSubject_GetIsPlayableRace_Equals_1 = ctda->operType == 0/*Subject*/ && ctda->ifunc == 254/*GetIsPlayableRace*/ && ctda->param1 != 0/*None*/ && ctda->compValue == 0x3f800000/*1 as a float*/;
+					bool isSubject_GetIsPlayableRace_Equals_1 = ctda->operType == 0/*Subject*/ && ctda->ifunc == 254/*GetIsPlayableRace*/ && ctda->param1 == 0/*None*/ && ctda->compValue == 0x3f800000/*1 as a float*/;
 					if (!isSubject_GetIsPlayableRace_Equals_1)
 					{
 						std::vector<Sk::SKCondition*>  skCTDAs = convertCTDAFromOblivion(ctda);
@@ -1746,14 +1746,14 @@ namespace Skyblivion {
 				}
 				*/
 				//WTM:  Change:
-				std::vector<Record*, std::allocator<Record*>> skyrimSNDRRecords;
-				skyblivionFile->SNDR.pool.MakeRecordsVector(skyrimSNDRRecords);
-				std::vector<Record*, std::allocator<Record*>> skyrimSOUNRecords;
-				skyblivionFile->SOUN.pool.MakeRecordsVector(skyrimSOUNRecords);
+				std::vector<Record*, std::allocator<Record*>> skyblivionSNDRRecords;
+				skyblivionFile->SNDR.pool.MakeRecordsVector(skyblivionSNDRRecords);
+				std::vector<Record*, std::allocator<Record*>> skyblivionSOUNRecords;
+				skyblivionFile->SOUN.pool.MakeRecordsVector(skyblivionSOUNRecords);
 				int tes5SNDRFormID = tes4FormID != 0 ? convertFormid(tes4FormID) : 0;
 				Sk::SNDRRecord* foundSNDR = NULL;
-				for (uint32_t it = 0; it < skyrimSNDRRecords.size(); ++it) {
-					Sk::SNDRRecord* sndr = (Sk::SNDRRecord*)(skyrimSNDRRecords)[it];
+				for (uint32_t it = 0; it < skyblivionSNDRRecords.size(); ++it) {
+					Sk::SNDRRecord* sndr = (Sk::SNDRRecord*)(skyblivionSNDRRecords)[it];
 					if (sndr->formID == tes5SNDRFormID)
 					{
 						foundSNDR = sndr;
@@ -1763,8 +1763,8 @@ namespace Skyblivion {
 				if (foundSNDR != NULL)
 				{
 					Sk::SOUNRecord* foundSOUN = NULL;
-					for (uint32_t it = 0; it < skyrimSOUNRecords.size(); ++it) {
-						Sk::SOUNRecord* soun = (Sk::SOUNRecord*)(skyrimSOUNRecords)[it];
+					for (uint32_t it = 0; it < skyblivionSOUNRecords.size(); ++it) {
+						Sk::SOUNRecord* soun = (Sk::SOUNRecord*)(skyblivionSOUNRecords)[it];
 						if (soun->SDSC.value == tes5SNDRFormID)
 						{
 							foundSOUN = soun;
@@ -1894,6 +1894,7 @@ namespace Skyblivion {
 					property->aliasId = -1;
 					property->status = 1;
 					script->properties.push_back(property);
+					log_debug << "Property " << propertyName << " associated on " + skScript.getScriptName() << std::endl;
 				}
 				else if (realPropertyName == "tTimer") { //TES4TimerHelper
                     PropertyObject* property = new PropertyObject();
@@ -3289,8 +3290,26 @@ namespace Skyblivion {
 		}
 		case 67: {//GetInCell
 			skyrimIndice = 359;//GetInCurrentLoc
-			FORMID cellFormID = convertFormid(oCTDA->param1);
-			parameterOne = cellToLCTNMap.getLCTNFormID(cellFormID);
+			FORMID tes4CELLFormID = oCTDA->param1;
+			FORMID tes5CELLFormID = convertFormid(tes4CELLFormID);
+			std::pair<int, std::string> lctn = cellToLCTNMap.getLCTN(tes5CELLFormID);
+			int lctnFormID = lctn.first;
+			std::string lctnEditorID = lctn.second;
+			parameterOne = lctnFormID;
+			if (tes4CELLFormID != NULL)//In at least one circumstance, oCTDA->param1 = 0, which will ultimately result in parameterOne being 0.
+			{
+				Ob::CELLRecord* cell = (Ob::CELLRecord*)findRecordByFormid(tes4CELLFormID, REV32(CELL));
+				std::string cellEditorID = cell->EDID.value;
+				std::string likelyLocationEditorID = "TES4" + cellEditorID + "Location";
+				std::string likelyLocationEditorIDLower = likelyLocationEditorID;
+				std::string lctnEditorIDLower = lctnEditorID;
+				std::transform(likelyLocationEditorIDLower.begin(), likelyLocationEditorIDLower.end(), likelyLocationEditorIDLower.begin(), tolower);
+				std::transform(lctnEditorIDLower.begin(), lctnEditorIDLower.end(), lctnEditorIDLower.begin(), tolower);
+				if (likelyLocationEditorIDLower != lctnEditorIDLower)
+				{
+					log_warning << "CELL " << cellEditorID << " mapped to LCTN " << lctnEditorID << "\r\n";
+				}
+			}
 			break;
 		}
 

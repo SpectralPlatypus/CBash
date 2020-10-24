@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <string>
 
 namespace Skyblivion
 {
@@ -7,9 +8,9 @@ namespace Skyblivion
 	{
 	public:
 		CELLToLCTNMap();
-		int getLCTNFormID(int cellFormID);
+		std::pair<int, std::string> getLCTN(int cellFormID);
 
 	private:
-		std::map<int, int> map;
+		std::map<int, std::pair<int, std::string>> map;
 	};
 }
