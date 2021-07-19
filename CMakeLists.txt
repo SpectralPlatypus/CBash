@@ -8,7 +8,7 @@
 # General Settings
 ##############################
 
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.14)
 project (CBash)
 include(ExternalProject)
 
@@ -25,6 +25,20 @@ IF (MSVC)
 ELSE ()
     set (ZLIB_LIBRARIES "${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
 ENDIF ()
+
+# GoogleTest requires at least C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 option(BUILD_SHARED_LIBS "Build a shared library" OFF)
 option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
@@ -109,3 +123,19 @@ message("Building")
 add_library           (CBash STATIC ${CBASH_SRC})
 add_dependencies	  (CBash zlib)
 target_link_libraries (CBash ${ZLIB_LIBRARIES})
+
+enable_testing()
+
+# Build Tests
+add_executable(
+  CBashTest WIN32
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests.cpp"
+)
+target_link_libraries(
+  CBashTest
+  gtest_main
+  CBash
+)
+
+include(GoogleTest)
+gtest_discover_tests(CBashTest)      
