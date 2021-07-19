@@ -112,9 +112,9 @@ namespace Skyblivion {
 				std::string firstLine;
 				std::getline(infile, firstLine);
 				infile.close();
-				const boost::regex declarationExtendsRegex("ScriptName +[A-Za-z0-9_]+ +extends +([A-Za-z0-9_]+)( |\r|\n)", boost::regex::icase);
-				boost::smatch results;
-				boost::regex_search(firstLine, results, declarationExtendsRegex);
+				const std::regex declarationExtendsRegex("ScriptName +[A-Za-z0-9_]+ +extends +([A-Za-z0-9_]+)( |\r|\n)", std::regex::icase);
+				std::smatch results;
+				std::regex_search(firstLine, results, declarationExtendsRegex);
 				extends = results[1].str();
 				return extends;
 			}

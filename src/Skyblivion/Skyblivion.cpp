@@ -41,8 +41,10 @@
 #include <regex>
 #include <iostream>
 #include <iomanip>
-#include <boost/regex.hpp>
-#include <boost/algorithm/string/join.hpp>
+#include <regex>
+
+//#include <boost/regex.hpp>
+//#include <boost/algorithm/string/join.hpp>
 #include <fstream>
 #include "../Common.h"
 #include "Skyblivion.h"
@@ -64,6 +66,17 @@
 #define TES4_UNDERSCORE_SCRIPT_PREFIX "TES4_"//WTM:  Change:  Added
 
 namespace Skyblivion {
+
+	static inline std::string join(const std::vector<std::string> my_vector, const char* separator) {
+		std::ostringstream result;
+		if (my_vector.size()) {
+			std::copy(my_vector.begin(), my_vector.end() - 1,
+				std::ostream_iterator<std::string>(result, separator));
+			result << my_vector.back();
+		}
+
+		return result.str();
+	}
 
 	SkyblivionConverter::SkyblivionConverter(Collection &oblivionCollection, Collection &skyrimCollection, const std::string rootPath):
 	rootBuildPath(rootPath),
@@ -1527,7 +1540,7 @@ namespace Skyblivion {
 	{
 		std::vector<std::string> foundFormIDsAdjustedStrings = std::vector<std::string>();
 		for (int i = 0; i < foundFormIDsAdjusted.size(); i++) { foundFormIDsAdjustedStrings.push_back(int_to_hex(foundFormIDsAdjusted[i])); }
-		log_debug << "Multiple form IDs were found for " << int_to_hex(searchByFormID) << " (" << realPropertyEdid << "):  The NAME search found " << boost::algorithm::join(foundFormIDsAdjustedStrings, ", ") << ".  The EDID map search found " << int_to_hex(formIDByEDID) << ".  Returning " << int_to_hex(returnFormIDAdjusted) << ".  File:  " << scriptPath << "\n";
+		log_debug << "Multiple form IDs were found for " << int_to_hex(searchByFormID) << " (" << realPropertyEdid << "):  The NAME search found " << join(foundFormIDsAdjustedStrings, ", ") << ".  The EDID map search found " << int_to_hex(formIDByEDID) << ".  Returning " << int_to_hex(returnFormIDAdjusted) << ".  File:  " << scriptPath << "\n";
 	}
 
 	int SkyblivionConverter::getReferenceFormID(Record* record, std::string realPropertyEdid, std::string scriptPath) {//WTM:  Change:  Added
@@ -1640,10 +1653,10 @@ namespace Skyblivion {
 
 		TES5File* skyblivionFile = this->getSkyblivionFile();
 		
-		boost::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?(;TES5FormID:([0-9]+);)?");
+		std::regex propRegex("(.*?) Property (.*?) Auto( Conditional)?(;TES4FormID:([0-9]+);)?(;TES5FormID:([0-9]+);)?");
 
-        boost::sregex_iterator properties(fullScript.begin(), fullScript.end(), propRegex, boost::match_not_dot_newline);
-        boost::sregex_iterator end;
+        std::sregex_iterator properties(fullScript.begin(), fullScript.end(), propRegex/*, std::regex::match_not_dot_newline*/); //should be default
+        std::sregex_iterator end;
 
 		std::string colPrefix = "col_";
 
