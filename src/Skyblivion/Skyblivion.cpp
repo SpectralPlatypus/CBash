@@ -966,7 +966,7 @@ namespace Skyblivion {
 					Sk::SKCTDA*  inDialogueOnly = new Sk::SKCTDA();
 					inDialogueOnly->operType = (0 << 5) + 0;
 					inDialogueOnly->compValue = 0x3f800000; //FLOAT 1
-					inDialogueOnly->ifunc = 249; //IsInDialogueWithPlayer
+					inDialogueOnly->ifunc = Sk::SKCTDA::fn_IsInDialogueWithPlayer; //IsInDialogueWithPlayer
 					inDialogueOnly->param1 = 0;
 					inDialogueOnly->param2 = 0;
 					inDialogueOnly->runOnType = 0; //Subject
@@ -985,7 +985,7 @@ namespace Skyblivion {
 					Sk::SKCTDA*  nonDialogueOnly = new Sk::SKCTDA();
 					nonDialogueOnly->operType = (0 << 5) + 0;
 					nonDialogueOnly->compValue = 0;
-					nonDialogueOnly->ifunc = 249; //IsnonDialogueWithPlayer
+					nonDialogueOnly->ifunc = Sk::SKCTDA::fn_IsInDialogueWithPlayer; //IsnonDialogueWithPlayer
 					nonDialogueOnly->param1 = 0;
 					nonDialogueOnly->param2 = 0;
 					nonDialogueOnly->runOnType = 0; //Subject
@@ -1375,7 +1375,7 @@ namespace Skyblivion {
 
 				if (currentDialForInfo->SNAM.value == REV32(HIT_)) {//WTM:  I tried commenting this as oracus0's requested, but crashes remained.
 					Sk::SKCondition *condition = new Sk::SKCondition();//Subject.GetIsID(PlayerNPC) == 0
-					condition->CTDA->ifunc = 72;//GetIsID
+					condition->CTDA->ifunc = Sk::SKCTDA::fn_GetIsID;//GetIsID
 					condition->CTDA->operType = 0;//Equals
 					condition->CTDA->compValue = 0;
 					condition->CTDA->param1 = 0x7;//Player NPC
@@ -1427,7 +1427,7 @@ namespace Skyblivion {
 				if (conditionGlobalVariableFormID != NULL)
 				{
 					Sk::SKCTDA* ctda = new Sk::SKCTDA();
-					ctda->ifunc = 74;//GetGlobalValue
+					ctda->ifunc = Sk::SKCTDA::fn_GetGlobalValue;//GetGlobalValue
 					ctda->param1 = conditionGlobalVariableFormID;
 					ctda->operType = (0/*Equals*/ << 5) + 0 /*no other flags*/;
 					ctda->compValue = 0x3f800000;//1 as a float
@@ -3332,7 +3332,7 @@ namespace Skyblivion {
 		Sk::SKCTDA* dstRecord = new Sk::SKCTDA();
 		dstRecord->operType = (sOperType << 5) + sOperFlags;
 		dstRecord->compValue = comparisionValue;
-        dstRecord->ifunc = skyrimIndice;
+        dstRecord->ifunc = (Sk::SKCTDA::function)skyrimIndice;
 		dstRecord->param1 = parameterOne;
 		dstRecord->param2 = parameterTwo;
 		dstRecord->runOnType = runOn;

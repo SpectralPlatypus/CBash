@@ -2556,6 +2556,7 @@ template <typename T, typename countType, int countRecord>
 class OptCounted : public T
 {
 public:
+
     void Write(FileWriter &writer)
     {
         countType count = (countType)this->value.size();

@@ -923,7 +923,7 @@ namespace Sk {
 					Effects.value[ListIndex]->CTDA.value[ListX2Index]->CTDA->compValue = *(FORMID_OR_FLOAT32 *)FieldValue;
 					return true;
 				case 4: //ifunc
-					Effects.value[ListIndex]->CTDA.value[ListX2Index]->CTDA->ifunc = *(uint16_t *)FieldValue;
+					Effects.value[ListIndex]->CTDA.value[ListX2Index]->CTDA->ifunc = *(Sk::SKCTDA::function *)FieldValue;
 					return true;
 				case 5: //unused2
 					if (ArraySize != 2)

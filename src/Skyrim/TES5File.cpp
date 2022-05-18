@@ -659,8 +659,8 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
         case eIgRACE:
         case REV32(RACE):
-            buffer_position = group_buffer_end;
-            //RACE.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            RACE.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
         case eIgREGN:
         case REV32(REGN):
@@ -1055,9 +1055,9 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
     */
     case REV32(QUST):
         return QUST.pool.used_object_capacity();
-    /*
     case REV32(RACE):
         return RACE.pool.used_object_capacity();
+    /*
     case REV32(REFR):
         return CELL.refr_pool.used_object_capacity();
     case REV32(REGN):
@@ -1275,9 +1275,9 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
         return HAIR.pool.construct(SourceRecord, this, true);
     case REV32(EYES):
         return EYES.pool.construct(SourceRecord, this, true);
+    */
     case REV32(RACE):
-        return RACE.pool.construct(SourceRecord, this, true);
-		*/
+        return RACE.pool.construct(SourceRecord, this, true);		
     case REV32(SOUN):
         return SOUN.pool.construct(SourceRecord, this, true);
 		/*
@@ -2156,10 +2156,11 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         QUST.pool.destroy(curRecord);
         return 1;
-/*    case REV32(RACE):
+    case REV32(RACE):
         deindexer.Accept(curRecord);
         RACE.pool.destroy(curRecord);
         return 1;
+    /*
     case REV32(REFR):
     {
         Sk::CELLRecord *cell_record = (Sk::CELLRecord *)curRecord->GetParentRecord();

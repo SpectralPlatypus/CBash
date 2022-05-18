@@ -10,11 +10,32 @@
 
 cmake_minimum_required (VERSION 3.14)
 project (CBash)
+
+option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
+option(CBASH_NO_BOOST_ZLIB "NO ZLIB" ON)
+option(BUILD_SHARED_LIBS "NO ZLIB" ON)
+
 include(ExternalProject)
+
+IF (MSVC)
+	# set (CMAKE_GENERATOR_TOOLSET "v141" CACHE STRING "Platform Toolset" FORCE)
+    # Force static C++ runtime linkage.
+    IF (PROJECT_STATIC_RUNTIME)
+        FOREACH(flag
+            CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
+            CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG_INIT
+            CMAKE_CXX_FLAGS_RELEASE  CMAKE_CXX_FLAGS_RELWITHDEBINFO
+            CMAKE_CXX_FLAGS_DEBUG  CMAKE_CXX_FLAGS_DEBUG_INIT)
+            STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
+            SET("${flag}" "${${flag}} /EHsc")
+        ENDFOREACH()
+    ENDIF ()
+ENDIF ()
 
 ExternalProject_Add(zlib
                     PREFIX "external"
-                    URL "https://zlib.net/zlib-1.2.11.tar.gz"
+                    URL "https://zlib.net/zlib-1.2.12.tar.gz"
+                    CMAKE_ARGS -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
                     INSTALL_COMMAND "")
 ExternalProject_Get_Property(zlib SOURCE_DIR BINARY_DIR)
 set (ZLIB_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR})
@@ -25,11 +46,6 @@ IF (MSVC)
 ELSE ()
     set (ZLIB_LIBRARIES "${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
 ENDIF ()
-
-# GoogleTest requires at least C++11
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS_RELEASE "/MT")
-set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
 
 include(FetchContent)
 FetchContent_Declare(
@@ -79,6 +95,7 @@ add_definitions(-DCBASH_NO_BOOST_ZLIB)
 
 # Include source and library directories.
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/src"
                      ${ZLIB_INCLUDE_DIRS})
 
 
@@ -88,31 +105,13 @@ include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
 
 # Settings when compiling for Windows. Since it's a Windows-only app this is always true, but useful to check for copy/paste into other projects.
 IF (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    add_definitions (-DUNICODE -D_UNICODE -DNDEBUG -DWIN32 -D_WINDOWS)
+    add_definitions (-DUNICODE -D_UNICODE -DWIN32 -D_WINDOWS)
     IF (BUILD_SHARED_LIBS)
         add_definitions (-DCBASH_DLL)
     ELSE ()
         add_definitions (-DCBASH_STATIC)
     ENDIF ()
 ENDIF ()
-
-IF (MSVC)
-	# set (CMAKE_GENERATOR_TOOLSET "v141" CACHE STRING "Platform Toolset" FORCE)
-    # Force static C++ runtime linkage.
-    IF (PROJECT_STATIC_RUNTIME)
-        FOREACH(flag
-            CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
-            CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG_INIT
-            CMAKE_CXX_FLAGS_RELEASE  CMAKE_CXX_FLAGS_RELWITHDEBINFO
-            CMAKE_CXX_FLAGS_DEBUG  CMAKE_CXX_FLAGS_DEBUG_INIT)
-            STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
-            SET("${flag}" "${${flag}} /EHsc")
-        ENDFOREACH()
-    ENDIF ()
-
-    set (CMAKE_EXE_LINKER_FLAGS "/SUBSYSTEM:WINDOWS")
-ENDIF ()
-
 
 ##############################
 # Actual Building
@@ -128,14 +127,13 @@ enable_testing()
 
 # Build Tests
 add_executable(
-  CBashTest WIN32
+  CBashTest
   "${CMAKE_CURRENT_SOURCE_DIR}/tests/tests.cpp"
 )
 target_link_libraries(
   CBashTest
-  gtest_main
   CBash
 )
 
-include(GoogleTest)
-gtest_discover_tests(CBashTest)      
+#include(GoogleTest)
+#gtest_discover_tests(CBashTest)      

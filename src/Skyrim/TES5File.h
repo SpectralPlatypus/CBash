@@ -127,7 +127,7 @@
 // #include "Records/PROJRecord.h"
 // #include "Records/PWATRecord.h" // Empty GRUP
  #include "Records/QUSTRecord.h"
-// #include "Records/RACERecord.h"
+ #include "Records/RACERecord.h"
 // #include "Records/REGNRecord.h"
 // #include "Records/RELARecord.h"
 // #include "Records/REVBRecord.h"
@@ -256,7 +256,7 @@ class TES5File : public ModFile
         // GRUP(PROJ);
         // GRUP(PWAT); // Empty GRUP
         GRUP(QUST);
-        // GRUP(RACE);
+        GRUP(RACE);
         // GRUP(REGN);
         // GRUP(RELA);
         // GRUP(REVB);

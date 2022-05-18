@@ -876,7 +876,7 @@ inline size_t query_file_size(file_handle_type handle, std::error_code& error)
         error = detail::last_error();
         return 0;
     }
-	return static_cast<int64_t>(file_size.QuadPart);
+	return static_cast<size_t>(file_size.QuadPart);
 #else // POSIX
     struct stat sbuf;
     if(::fstat(handle, &sbuf) == -1)
@@ -901,7 +901,7 @@ struct mmap_context
 inline mmap_context memory_map(const file_handle_type file_handle, const int64_t offset,
     const int64_t length, const access_mode mode, std::error_code& error)
 {
-    const int64_t aligned_offset = make_offset_page_aligned(offset);
+    const size_t aligned_offset = make_offset_page_aligned(static_cast<size_t>(offset));
     const int64_t length_to_map = offset - aligned_offset + length;
 #ifdef _WIN32
     const int64_t max_file_size = offset + length;
@@ -922,7 +922,7 @@ inline mmap_context memory_map(const file_handle_type file_handle, const int64_t
             mode == access_mode::read ? FILE_MAP_READ : FILE_MAP_WRITE,
             win::int64_high(aligned_offset),
             win::int64_low(aligned_offset),
-            length_to_map));
+            static_cast<SIZE_T>(length_to_map)));
     if(mapping_start == nullptr)
     {
         // Close file handle if mapping it failed.

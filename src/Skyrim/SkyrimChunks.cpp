@@ -214,7 +214,7 @@ bool SKDESTRUCT::operator != (const SKDESTRUCT &other) const
 SKCTDA::SKCTDA() :
     operType(0),
     compValue(0),
-    ifunc(5), // 5 type makes sure conditions don't try to resolve param1/param2
+    ifunc(fn_GetLocked), // 5 type makes sure conditions don't try to resolve param1/param2
     param1(0),
     param2(0),
     runOnType(0),
@@ -616,6 +616,54 @@ bool SKEffect::operator == (const SKEffect &other) const
 }
 
 bool SKEffect::operator != (const SKEffect &other) const
+{
+    return !(*this == other);
+}
+
+
+bool SKBODT::operator ==(const SKBODT& other) const
+{
+    return (body_part == other.body_part &&
+        flags == other.flags &&
+        skill == other.skill);
+}
+bool SKBODT::operator !=(const SKBODT& other) const
+{
+    return !(*this == other);
+}
+
+bool SKRACEDATA::operator ==(const SKRACEDATA& other) const
+{
+    return skills[0] == other.skills[0] &&
+        skills[1] == other.skills[1] &&
+        skills[2] == other.skills[2] &&
+        skills[3] == other.skills[3] &&
+        skills[4] == other.skills[4] &&
+        skills[5] == other.skills[5] &&
+        skills[6] == other.skills[6] &&
+        maleHeight == other.maleHeight && femaleHeight == other.femaleHeight && maleWeight == other.maleWeight && femaleWeight == other.femaleWeight &&
+        flags == other.flags &&
+        startingHealth == other.startingHealth && startingMagicka == other.startingMagicka && startingStamina == other.startingStamina &&
+        baseCarryWeight == other.baseCarryWeight && baseMass == other.baseMass &&
+        accelerationRate == other.accelerationRate && decelerationRate == other.decelerationRate &&
+        size == other.size &&
+        headBipedObject == other.headBipedObject &&
+        hairBipedObject == other.hairBipedObject &&
+        injuredHealthPct == other.injuredHealthPct &&
+        shieldBipedObject == other.shieldBipedObject &&
+        healthRegen == other.healthRegen && magickaRegen == other.magickaRegen && staminaRegen == other.staminaRegen &&
+        unarmedDamage == other.unarmedDamage && unarmedReach == other.unarmedReach &&
+        bodyBipedObject == other.bodyBipedObject &&
+        aimAngleTolerance == other.aimAngleTolerance &&
+        flightRadius == other.flightRadius &&
+        angularAccelerationRate == other.angularAccelerationRate &&
+        angularTolerance == other.angularTolerance &&
+        flags2 == other.flags2 &&
+        mountOffsetX == other.mountOffsetX && mountOffsetY == other.mountOffsetY && mountOffsetZ == other.mountOffsetZ &&
+        dismountOffsetX == other.dismountOffsetX && dismountOffsetY == other.dismountOffsetY && dismountOffsetZ == other.dismountOffsetZ &&
+        mountCameraOffsetX == other.mountCameraOffsetX && mountCameraOffsetY == other.mountCameraOffsetY && mountCameraOffsetZ == other.mountCameraOffsetZ;
+}
+bool SKRACEDATA::operator !=(const SKRACEDATA& other) const
 {
     return !(*this == other);
 }
