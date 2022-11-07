@@ -32,10 +32,14 @@ IF (MSVC)
     ENDIF ()
 ENDIF ()
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+option(ZLIB_FORCE_STATIC "Remove the dynamic libraries after zlib install" ON)
+mark_as_advanced(ZLIB_FORCE_STATIC)
+
 ExternalProject_Add(zlib
                     PREFIX "external"
                     URL "https://zlib.net/zlib-1.2.12.tar.gz"
-                    CMAKE_ARGS -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG}
+                    CMAKE_ARGS -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG} -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE} -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG} -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE} -DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}
                     INSTALL_COMMAND "")
 ExternalProject_Get_Property(zlib SOURCE_DIR BINARY_DIR)
 set (ZLIB_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR})

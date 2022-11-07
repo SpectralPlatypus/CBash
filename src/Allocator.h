@@ -145,7 +145,7 @@ class RecordPoolAllocator
                     {
                     if(free_set.find(last_position) == free_set.end())
                         {
-                        printer("Destroying: %08X\n", ((Record *)last_position)->formID);
+                        //printer("Destroying: %08X\n", ((Record *)last_position)->formID);
                         ((Record *)last_position)->~Record();
                         }
                     }

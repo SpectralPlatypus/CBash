@@ -733,10 +733,15 @@ TES5Record::TES5Record(unsigned char *_recData):
     memset(&versionControl2[0], 0x00, 2);
     }
 
-TES5Record::TES5Record(TES5Record *srcRecord)
+TES5Record::TES5Record(TES5Record *srcRecord) :
+    Record(NULL),
+    formVersion(0),
+    versionControl2{ 0,0 }
     {
     if (srcRecord == NULL)
+    {
         return;
+    }
 
     flags = srcRecord->flags;
     formID = srcRecord->formID;

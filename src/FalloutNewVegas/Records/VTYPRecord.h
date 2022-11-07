@@ -50,7 +50,7 @@ class VTYPRecord : public FNVRecord //Voice Type
 
     public:
         StringRecord EDID; //Editor ID
-        OptSimpleSubRecord<uint8_t> DNAM; //Flags
+        SimpleSubRecord<uint8_t> DNAM; //Flags
 
         VTYPRecord(unsigned char *_recData=NULL);
         VTYPRecord(VTYPRecord *srcRecord);

@@ -48,14 +48,14 @@
 #include "Records/AMMORecord.h"
 #include "Records/ANIORecord.h"
 #include "Records/APPARecord.h"
-// #include "Records/ARMARecord.h"
+#include "Records/ARMARecord.h"
 #include "Records/ARMORecord.h"
 #include "Records/ARTORecord.h"
 #include "Records/ASPCRecord.h"
 #include "Records/ASTPRecord.h"
 // #include "Records/AVIFRecord.h"
 #include "Records/BOOKRecord.h"
-// #include "Records/BPTDRecord.h"
+#include "Records/BPTDRecord.h"
 // #include "Records/CAMSRecord.h"
 #include "Records/CELLRecord.h"
 // #include "Records/CLASRecord.h"
@@ -177,14 +177,14 @@ class TES5File : public ModFile
         GRUP(AMMO);
         GRUP(ANIO);
         GRUP(APPA);
-        // GRUP(ARMA);
+        GRUP(ARMA);
         GRUP(ARMO);
         GRUP(ARTO);
         GRUP(ASPC);
         GRUP(ASTP);
         // GRUP(AVIF);
         GRUP(BOOK);
-        // GRUP(BPTD);
+        GRUP(BPTD);
         // GRUP(CAMS);
         GRUP(CELL);
         // GRUP(CLAS);

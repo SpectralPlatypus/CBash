@@ -156,17 +156,23 @@ class RACERecord : public TES5Record //Race
             StringRecord TINT; //File Name
             ReqSimpleSubRecord<uint16_t> TINP; //Mask Type
             ReqSimpleSubRecord<FORMID> TIND; //Preset Default
+
+            void Write(FileWriter& writer);
         };
 
         struct Preset {
             ReqSimpleSubRecord<FORMID> TINC; //Color
             ReqSimpleFloatSubRecord<> TINV; //Default Value
             ReqSimpleSubRecord<uint16_t> TIRS; //index
+
+            void Write(FileWriter& writer);
         };
 
         struct TintAssets {
             UnorderedSparseArray<Texture> TintLayer;
             UnorderedSparseArray<Preset> Presets;
+
+            void Write(FileWriter& writer);
         };
 
         struct HeadPart {
@@ -202,16 +208,26 @@ class RACERecord : public TES5Record //Race
 
             TintAssets                          tints;
             GenericModel                        model;
+
+            void Write(FileWriter& writer);
         };
 
         struct HeadData 
         {
             //ReqSubRecord<GENNAM> NAM0; //Head Marker (Empty)
             //ReqSubRecord<GENNAM> MNAM; //Head Marker (Empty)
-            OrderedSparseArray<HeadGenderData> maleHeadData;
+            UnorderedSparseArray<HeadGenderData> maleHeadData;
             //ReqSubRecord<GENNAM> FNAM; //Head Marker (Empty)
-            OrderedSparseArray<HeadGenderData> femaleHeadData;
+            UnorderedSparseArray<HeadGenderData> femaleHeadData;
         };
+
+        struct AlternateTexture {
+            StringRecord                    _3DName;
+            ReqSimpleSubRecord<FORMID>       TEXT;
+            ReqSimpleSubRecord<int>         _3dInteger;
+        };
+
+        void init();
 
     public:
         StringRecord EDID; //Editor ID
@@ -219,15 +235,15 @@ class RACERecord : public TES5Record //Race
         StringRecord DESC; //Description
         OptCounted<OrderedPackedArray<FORMID>, uint32_t, REV32(SPCT)> SPLO; // Actor effects
         OptSimpleSubRecord<FORMID> WNAM; // Skin, ARMO record
-        ReqSubRecord<SKBODT> BODT; // Body Template
+        ReqSubRecord<SKBOD2> BOD2; // Body Template
         OptCounted<OrderedPackedArray<FORMID>, uint32_t, REV32(KSIZ)> KWDA; // Keywords
         ReqSubRecord<SKRACEDATA> DATA; //Data
         //ReqSubRecord<GENNAM> MNAM; //Male Marker (Empty)
         StringRecord MNAM_ANAM; //Male Skeletal Model
-        ReqSubRecord<RawRecord> MNAM_MODT; //Texture Files Hashes
+        ReqSubRecord<AlternateTexture> MNAM_MODT; //Texture Files Hashes
         //ReqSubRecord<GENNAM> FNAM; //Female Marker (Empty)
         StringRecord FNAM_ANAM; //Female Skeletal Model
-        OptSubRecord<RawRecord> FNAM_MODT; //Texture Files Hashes
+        OptSubRecord<AlternateTexture> FNAM_MODT; //Texture Files Hashes
         //ReqSubRecord<ModelInfo> NAM2; //Movement Marker (Empty)
         OrderedSparseArray<std::array<char,4>> MTNM;
         ReqSubRecord<std::array<FORMID,2>> VTCK; //default voice types	formid[2]	VTYP male / female

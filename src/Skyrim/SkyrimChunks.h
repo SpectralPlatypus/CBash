@@ -153,6 +153,13 @@ struct SKDESTRUCT //Destructable
 
 struct SKCTDA //Condition
 {
+    enum CastingSource : uint32_t {
+        Left = 0,
+        Right,
+        Voice,
+        Instant
+    };
+
     enum function : uint16_t {
         fn_GetWantBlocking = 0,
         fn_GetDistance = 1,
@@ -722,6 +729,51 @@ struct SKBODT
 };
 SIZE_CHECK(SKBODT, 12);
 
+struct SKBOD2
+{
+    enum BodyParts {
+        bpHead = 0x00000001,  //'30 - Head',
+        bpHair = 0x00000002,  //'31 - Hair',
+        bpBody = 0x00000004,  //'32 - Body',
+        bpHands = 0x00000008,  //'33 - Hands',
+        bpForearms = 0x00000010,  //'34 - Forearms',
+        bpAmulet = 0x00000020,  //'35 - Amulet',
+        bpRing = 0x00000040,  //36 - Ring',
+        bpFeet = 0x00000080,  //37 - Feet',
+        bpCalves = 0x00000100,  //38 - Calves',
+        bpShield = 0x00000200,  //39 - Shield',
+        bpTail = 0x00000400,  //40 - Tail',
+        bpLongHair = 0x00000800,  //41 - LongHair',
+        bpCirclet = 0x00001000,  //42 - Circlet',
+        bpEars = 0x00002000,  //43 - Ears',
+        bpUnnamed44 = 0x00004000,  //44 - Unnamed',
+        bpUnnamed45 = 0x00008000,  //45 - Unnamed',
+        bpUnnamed46 = 0x00010000,  //46 - Unnamed',
+        bpUnnamed47 = 0x00020000,  //47 - Unnamed',
+        bpUnnamed48 = 0x00040000,  //48 - Unnamed',
+        bpUnnamed49 = 0x00080000,  //49 - Unnamed',
+        bpDecapitateHead = 0x00100000,  //50 - DecapitateHead',
+        bpDecapitate = 0x00200000,  //51 - Decapitate',
+        bpUnnamed52 = 0x00400000,  //52 - Unnamed',
+        bpUnnamed53 = 0x00800000,  //53 - Unnamed',
+        bpUnnamed54 = 0x01000000,  //54 - Unnamed',
+        bpUnnamed55 = 0x02000000,  //55 - Unnamed',
+        bpUnnamed56 = 0x04000000,  //56 - Unnamed',
+        bpUnnamed57 = 0x08000000,  //57 - Unnamed',
+        bpUnnamed58 = 0x10000000,  //58 - Unnamed',
+        bpUnnamed59 = 0x20000000,  //59 - Unnamed',
+        bpUnnamed60 = 0x40000000,  //60 - Unnamed',
+        bpUnnamed61 = 0x80000000  //61 - FX01'
+    };
+
+    uint32_t body_part;
+    uint32_t skill;
+
+    bool operator ==(const SKBOD2& other) const;
+    bool operator !=(const SKBOD2& other) const;
+};
+SIZE_CHECK(SKBOD2, 8);
+
 struct SKRACEDATA
 {
 
@@ -976,11 +1028,17 @@ struct GenericModel {
     StringRecord MODL; //model filename
     RawRecord MODT;
     RawRecord MODS;
+
+    bool operator ==(const GenericModel& other) const;
+    bool operator !=(const GenericModel& other) const;
 };
 
 struct BodyPart {
     SubRecord<uint32_t> INDX; //Enum index
-    GenericModel model;
+    OptSubRecord<GenericModel> model;
+
+    bool operator ==(const BodyPart& other) const;
+    bool operator !=(const BodyPart& other) const;
 };
 
 } // namespace Sk

@@ -78,7 +78,7 @@ namespace Sk {
 		StringRecord ICO2;
 		StringRecord MIC2;
 		RawRecord BODT;
-		RawRecord BOD2;
+		ReqSubRecord<SKBOD2> BOD2;
 		OptSubRecord<GENDESTRUCT> DEST; // Destruction data
 		ReqSimpleSubRecord<FORMID> YNAM; // Sound - pick up
 		ReqSimpleSubRecord<FORMID> ZNAM; // Sound - drop

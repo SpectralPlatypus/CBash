@@ -632,6 +632,16 @@ bool SKBODT::operator !=(const SKBODT& other) const
     return !(*this == other);
 }
 
+bool SKBOD2::operator ==(const SKBOD2& other) const
+{
+    return (body_part == other.body_part &&
+        skill == other.skill);
+}
+bool SKBOD2::operator !=(const SKBOD2& other) const
+{
+    return !(*this == other);
+}
+
 bool SKRACEDATA::operator ==(const SKRACEDATA& other) const
 {
     return skills[0] == other.skills[0] &&
@@ -741,6 +751,26 @@ GENPRKR::GENPRKR() :
 GENPRKR::~GENPRKR()
 {
 	//
+}
+
+bool BodyPart::operator == (const BodyPart& other) const
+{
+    return (INDX == other.INDX && model == other.model);
+}
+
+bool BodyPart::operator != (const BodyPart& other) const
+{
+    return !(*this == other);
+}
+
+bool GenericModel::operator == (const GenericModel& other) const
+{
+    return (MODL.equalsi(other.MODL) && MODT == other.MODT && MODS == other.MODS);
+}
+
+bool GenericModel::operator != (const GenericModel& other) const
+{
+    return !(*this == other);
 }
 
 } // namespace Sk

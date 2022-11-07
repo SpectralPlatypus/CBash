@@ -44,7 +44,7 @@ class VTYPRecord : public TES5Record // Word of Power Record
     {
     public:
         StringRecord EDID; // Editor ID
-        ReqSimpleSubRecord<uint8_t> DNAM; // flags
+        SimpleSubRecord<uint8_t> DNAM; // flags
 
         enum flagFlags
         {

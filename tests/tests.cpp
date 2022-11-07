@@ -111,9 +111,13 @@ wbWeaponAnimTypeEnum := wbEnum([
 
 int main(int argc, char* argv[])
 {
-	Collection skyrimCollection = Collection("D:\\BehaviorWorkspace", 3);
-	ModFlags masterFlags = ModFlags(0xA);
-	ModFile* esm = skyrimCollection.AddMod("creatures.esp", masterFlags);
+	Collection skyrimCollection = Collection("D:\\SteamLibrary\\steamapps\\common\\Skyrim Special Edition\\Data", 3);
+	ModFlags espFlags = ModFlags(0x1818);
+	espFlags.IsNoLoad = false;
+	espFlags.IsFullLoad = true;
+	espFlags.IsMinLoad = false;
+	espFlags.IsCreateNew = true;
+	ModFile* esp = skyrimCollection.AddMod("RACETEST.esp", espFlags);
 
 	char* argvv[4];
 	argvv[0] = new char();
@@ -122,7 +126,56 @@ int main(int argc, char* argv[])
 	argvv[3] = new char();
 	logger.init(4, argvv);
 
-	skyrimCollection.Load();
+	int result = skyrimCollection.Load();
+
+	char* race_EDID = new char[10];
+	memset(race_EDID, 0, 10);
+	memcpy(race_EDID, "Race", 5);
+	Sk::RACERecord* race_record = (Sk::RACERecord*)skyrimCollection.CreateRecord(esp, REV32(RACE), NULL, race_EDID, NULL, 0);
+	race_record->EDID.value = race_EDID;
+
+	char* voice_type_m_EDID = new char[10];
+	memset(voice_type_m_EDID, 0, 10);
+	memcpy(voice_type_m_EDID, "VoiceM", 6);
+	Sk::VTYPRecord* voice_type_m_record = (Sk::VTYPRecord*)skyrimCollection.CreateRecord(esp, REV32(VTYP), NULL, voice_type_m_EDID, NULL, 0);
+	voice_type_m_record->EDID.value = voice_type_m_EDID;
+	race_record->VTCK.value[0] = voice_type_m_record->formID;
+
+	char* voice_type_f_EDID = new char[10];
+	memset(voice_type_f_EDID, 0, 10);
+	memcpy(voice_type_f_EDID, "VoiceF", 6);
+	Sk::VTYPRecord* voice_type_f_record = (Sk::VTYPRecord*)skyrimCollection.CreateRecord(esp, REV32(VTYP), NULL, voice_type_f_EDID, NULL, 0);
+	voice_type_f_record->EDID.value = voice_type_f_EDID;
+	race_record->VTCK.value[1] = voice_type_f_record->formID;
+
+	char* body_parts_EDID = new char[10];
+	memset(body_parts_EDID, 0, 10);
+	memcpy(body_parts_EDID, "Parts", 6);
+	Sk::BPTDRecord* body_parts_record = (Sk::BPTDRecord*)skyrimCollection.CreateRecord(esp, REV32(BPTD), NULL, body_parts_EDID, NULL, 0);
+	body_parts_record->EDID.value = body_parts_EDID;
+	race_record->GNAM.value = body_parts_record->formID;
+
+	char* arma_EDID = new char[10];
+	memset(arma_EDID, 0, 10);
+	memcpy(arma_EDID, "ArmorA", 7);
+	Sk::ARMARecord* arma_record = (Sk::ARMARecord*)skyrimCollection.CreateRecord(esp, REV32(ARMA), NULL, arma_EDID, NULL, 0);
+	arma_record->EDID.value = arma_EDID;
+	arma_record->RNAM.value = race_record->formID;
+	arma_record->BOD2.value.body_part = Sk::SKBOD2::BodyParts::bpBody;
+
+	char* armo_EDID = new char[10];
+	memset(armo_EDID, 0, 10);
+	memcpy(armo_EDID, "Armor", 6);
+	Sk::ARMORecord* armo_record = (Sk::ARMORecord*)skyrimCollection.CreateRecord(esp, REV32(ARMO), NULL, armo_EDID, NULL, 0);
+	armo_record->EDID.value = armo_EDID;
+	armo_record->RNAM.value = race_record->formID;
+	armo_record->BOD2.value.body_part = Sk::SKBOD2::BodyParts::bpBody;
+	armo_record->MODL.value.push_back(arma_record->formID);
+
+	ModSaveFlags skSaveFlags = ModSaveFlags(2);
+	skSaveFlags.IsCleanMasters = true;
+	std::string esp_name = "RACETEST.esp";
+	skyrimCollection.SaveMod(esp, skSaveFlags, (char* const)esp_name.c_str());
 
 	//Collection skyrimCollection = Collection("D:\\SteamLibrary\\steamapps\\common\\Skyrim\\Data", 3);
 	//ModFlags masterFlags = ModFlags(0xA);

@@ -39,18 +39,100 @@
 namespace Sk
 {
 
+    void RACERecord::Texture::Write(FileWriter& writer)
+    {
+        WRITE(TINI); //Index
+        WRITE(TINT); //File Name
+        WRITE(TINP); //Mask Type
+        WRITE(TIND); //Preset Default
+    }
+
+    void RACERecord::Preset::Write(FileWriter& writer)
+    {
+        WRITE(TINC); //Color
+        WRITE(TINV); //Default Value
+        WRITE(TIRS); //index
+    }
+
+    void RACERecord::TintAssets::Write(FileWriter& writer)
+    {
+        TintLayer.Write(writer);
+        Presets.Write(writer);
+    }
+
+    void RACERecord::HeadGenderData::Write(FileWriter& writer)
+    {
+        for (auto& part : headParts.value)
+        {
+            part.INDX.Write(REV32(INDX), writer);
+            part.HEAD.Write(REV32(HEAD), writer);
+        }
+        for (int i = 0; i < 4; ++i)
+        {
+            morphs[i].MPAI.Write(REV32(MPAI), writer);
+            morphs[i].MPAV.Write(REV32(MPAV), writer);
+        }
+        WRITE(RPRM);
+        WRITE(AHCM);
+        WRITE(FTSM);
+        WRITE(DFTM);
+        tints.Write(writer);
+    }
 
 RACERecord::RACERecord(unsigned char *_recData):
     TES5Record(_recData)
     {
-    //
+    init();
     }
+
+void RACERecord::init()
+{
+    DATA.value.maleHeight = 0.5f;
+    DATA.value.maleWeight = 0.5f;
+    DATA.value.flags = SKRACEDATA::Flags01::NoCombatInWater;
+    
+    MTNM.value = {
+        std::array<char, 4>({ 'B','L','D','O' }),
+        std::array<char, 4>({ 'R','U','N','1' }),
+        std::array<char, 4>({ 'S','N','E','K' }),
+        std::array<char, 4>({ 'S','W','I','M' }),
+        std::array<char, 4>({ 'W','A','L','K' })
+    };
+
+    //VTCK is necessary
+    
+    PNAM.value = 5.0f;
+    UNAM.value = 3.0f;
+
+    //GNAM is necessary
+
+    uint32_t newSize = 1;
+    bodyData.value.maleData.resize(newSize);
+    bodyData.value.femaleData.resize(newSize);
+    for (int i = 0; i < 32; i++)
+    {
+        //At least one should be non null
+        if (i == 2)
+        {
+            StringRecord dummy; dummy.Copy("BODY");
+            NAME.push_back(dummy);
+        }
+        else {
+            StringRecord dummy; dummy.value = new char(0);
+            NAME.push_back(dummy);
+        }
+    }
+    VNAM.value = 0xFFFFFFFF;
+}
 
 RACERecord::RACERecord(RACERecord *srcRecord):
     TES5Record()
     {
-    if(srcRecord == NULL)
+    if (srcRecord == NULL)
+    {
+        init();
         return;
+    }
 
     flags = srcRecord->flags;
     formID = srcRecord->formID;
@@ -65,7 +147,7 @@ RACERecord::RACERecord(RACERecord *srcRecord):
     DESC = srcRecord->DESC;
     SPLO = srcRecord->SPLO;
     WNAM = srcRecord->WNAM;
-    BODT = srcRecord->BODT;
+    BOD2 = srcRecord->BOD2;
     KWDA = srcRecord->KWDA; // Keywords
     DATA = srcRecord->DATA; //Data
     //ReqSubRecord<GENNAM> MNAM; //Male Marker (Empty)
@@ -125,28 +207,132 @@ bool RACERecord::VisitFormIDs(FormIDOp &op)
     if(!IsLoaded())
         return false;
 
-    //if (SPLO.IsLoaded())
-    //{
-
-    //    for (uint32_t ListIndex = 0; ListIndex < SPLO->value.size(); ListIndex++)
-    //        op.Accept(SPLO->value[ListIndex]);
-    //}
-    //for(uint32_t ListIndex = 0; ListIndex < XNAM.value.size(); ListIndex++)
-    //    op.Accept(XNAM.value[ListIndex]->faction);
-    //if(VNAM.IsLoaded())
-    //    {
-    //    op.Accept(VNAM.value.femaleVoice);
-    //    op.Accept(VNAM.value.maleVoice);
-    //    }
-    //if(DNAM.IsLoaded())
-    //    {
-    //    op.Accept(DNAM.value.defaultHairFemale);
-    //    op.Accept(DNAM.value.defaultHairMale);
-    //    }
-    //for(uint32_t ListIndex = 0; ListIndex < HNAM.value.size(); ListIndex++)
-    //    op.Accept(HNAM.value[ListIndex]);
-    //for(uint32_t ListIndex = 0; ListIndex < ENAM.value.size(); ListIndex++)
-    //    op.Accept(ENAM.value[ListIndex]);
+    if (SPLO.IsLoaded())
+    {
+        for (uint32_t ListIndex = 0; ListIndex < SPLO.value.size(); ListIndex++)
+            op.Accept(SPLO.value[ListIndex]);
+    }
+    if(VNAM.IsLoaded())
+    {
+        op.Accept(VNAM.value);
+    }
+    if (KWDA.IsLoaded())
+    {
+        for (uint32_t ListIndex = 0; ListIndex < KWDA.value.size(); ListIndex++)
+            op.Accept(KWDA.value[ListIndex]);
+    }
+    op.Accept(VTCK.value[0]);
+    op.Accept(VTCK.value[1]);
+    if (DNAM.IsLoaded() && NULL != DNAM.value)
+    {
+        op.Accept(DNAM.value->at(0));
+        op.Accept(DNAM.value->at(1));
+    }
+    if (HCLF.IsLoaded() && NULL != HCLF.value)
+    {
+        op.Accept(HCLF.value->at(0));
+        op.Accept(HCLF.value->at(1));
+    }
+    if (ATKR.IsLoaded() && ATKR.value != nullptr)
+    {
+        for (uint32_t ListIndex = 0; ListIndex < ATKR.value->value.size(); ListIndex++)
+        {
+            op.Accept(ATKR.value->value[ListIndex]);
+        }
+    }
+    if (attacks.IsLoaded())
+    {
+        for (uint32_t ListIndex = 0; ListIndex < attacks.value.value.size(); ListIndex++)
+        {
+            op.Accept(attacks.value.value[ListIndex].ATKD.value.attackSpell);
+            op.Accept(attacks.value.value[ListIndex].ATKD.value.attackType);
+        }
+    }
+    if (HNAM.IsLoaded() && HNAM.value != NULL)
+    {
+        for (uint32_t ListIndex = 0; ListIndex < HNAM.value->value.size(); ListIndex++)
+            op.Accept(HNAM.value->value[ListIndex]);
+    }
+    if (ENAM.IsLoaded() && ENAM.value != NULL)
+    {
+        for (uint32_t ListIndex = 0; ListIndex < ENAM.value->value.size(); ListIndex++)
+            op.Accept(ENAM.value->value[ListIndex]);
+    }
+    if (GNAM.IsLoaded())
+    {
+        op.Accept(GNAM.value);
+    }
+    if (NAM4.IsLoaded())
+    {
+        op.Accept(NAM4.value);
+    }
+    if (NAM5.IsLoaded())
+    {
+        op.Accept(NAM5.value);
+    }
+    if (NAM7.IsLoaded())
+    {
+        op.Accept(NAM7.value);
+    }
+    if (ONAM.IsLoaded())
+    {
+        op.Accept(ONAM.value);
+    }
+    if (LNAM.IsLoaded())
+    {
+        op.Accept(LNAM.value);
+    }
+    if (movementTypes.IsLoaded())
+    {
+        for (uint32_t ListIndex = 0; ListIndex < movementTypes.value.size(); ListIndex++)
+        {
+            if (movementTypes.value[ListIndex].MTYP.IsLoaded())
+            {
+                op.Accept(movementTypes.value[ListIndex].MTYP.value);
+            }
+        }
+    }
+    if (QNAM.IsLoaded())
+    {
+        for (uint32_t ListIndex = 0; ListIndex < QNAM.value.size(); ListIndex++)
+            op.Accept(QNAM.value[ListIndex]);
+    }
+    if (UNES.IsLoaded())
+    {
+        op.Accept(UNES.value);
+    }
+    if (WKMV.IsLoaded())
+    {
+        op.Accept(WKMV.value);
+    }
+    if (RNMV.IsLoaded())
+    {
+        op.Accept(RNMV.value);
+    }
+    if (SWMV.IsLoaded())
+    {
+        op.Accept(SWMV.value);
+    }
+    if (FLMV.IsLoaded())
+    {
+        op.Accept(FLMV.value);
+    }
+    if (SNMV.IsLoaded())
+    {
+        op.Accept(SNMV.value);
+    }
+    if (SPMV.IsLoaded())
+    {
+        op.Accept(SPMV.value);
+    }
+    if (NAM8.IsLoaded())
+    {
+        op.Accept(NAM8.value);
+    }
+    if (RNAM.IsLoaded())
+    {
+        op.Accept(RNAM.value);
+    }
 
     return op.Stop();
     }
@@ -266,7 +452,7 @@ int32_t RACERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
                 break;
             case REV32(BODT):
             case REV32(BOD2):
-                BODT.Read(buffer, subSize);
+                BOD2.Read(buffer, subSize);
                 break;
             case REV32(KSIZ):
                 // Number of KWDAs
@@ -347,7 +533,9 @@ int32_t RACERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
                     break;
                 case pMaleBodyPartInfo:
                 case pFemaleBodyPartInfo:
-                    tempBodyPart.model.MODT.Read(buffer, subSize, CompressedOnDisk);
+                    if (!tempBodyPart.model.IsLoaded())
+                        tempBodyPart.model.Load();
+                    tempBodyPart.model.value->MODT.Read(buffer, subSize, CompressedOnDisk);
                     break;
                 case pBehaviorGraphMaleInfo:
                 case pBehaviorGraphFemaleInfo:
@@ -444,8 +632,9 @@ int32_t RACERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
                 switch (rState) {
                 case pMaleBodyPartInfo:
                 case pFemaleBodyPartInfo:
-                    tempBodyPart.model.MODL.value = NULL;
-                    tempBodyPart.model.MODL.Read(buffer, subSize, CompressedOnDisk);
+                    tempBodyPart.model.Load();
+                    tempBodyPart.model->MODL.value = NULL;
+                    tempBodyPart.model->MODL.Read(buffer, subSize, CompressedOnDisk);
                     break;
                 case pBehaviorGraphMaleInfo:
                 case pBehaviorGraphFemaleInfo:
@@ -454,6 +643,7 @@ int32_t RACERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
                     break;
                 case pHeadInfoMale:
                 case pHeadInfoFemale:
+                    tempBodyPart.model.Load();
                     tempHeadData.model.MODL.value = NULL;
                     tempHeadData.model.MODL.Read(buffer, subSize, CompressedOnDisk);
                     break;
@@ -465,7 +655,8 @@ int32_t RACERecord::ParseRecord(unsigned char *buffer, unsigned char *end_buffer
                 switch (rState) {
                 case pMaleBodyPartInfo:
                 case pFemaleBodyPartInfo:
-                    tempBodyPart.model.MODS.Read(buffer, subSize, CompressedOnDisk);
+                    tempBodyPart.model.Load();
+                    tempBodyPart.model->MODS.Read(buffer, subSize, CompressedOnDisk);
                     break;
                 case pBehaviorGraphMaleInfo:
                 case pBehaviorGraphFemaleInfo:
@@ -729,7 +920,7 @@ int32_t RACERecord::Unload()
     DESC.Unload(); //Description
     SPLO.Unload(); // Actor effects
     WNAM.Unload(); // Skin, ARMO record
-    BODT.Unload(); // Body Template
+    BOD2.Unload(); // Body Template
     KWDA.Unload(); // Keywords
     DATA.Unload(); //Data
     //ReqSubRecord<GENNAM> MNAM; //Male Marker (Empty)
@@ -788,144 +979,177 @@ int32_t RACERecord::Unload()
 
 int32_t RACERecord::WriteRecord(FileWriter &writer)
     {
-    //WRITE(EDID);
-    //WRITE(FULL);
-    //WRITE(DESC);
-    //WRITE(SPLO);
-    //XNAM.Write(REV32(XNAM), writer, true);
-    //WRITE(DATA);
-    //WRITE(VNAM);
-    //WRITE(DNAM);
-    //WRITE(CNAM);
-    //WRITE(PNAM);
-    //WRITE(UNAM);
-    //WRITE(ATTR);
-
-    //WRITEEMPTY(NAM0);
-    //uint32_t curINDX = 0;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD0.Write(writer);
-    //curINDX = 1;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD1.Write(writer);
-    //curINDX = 2;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD2.Write(writer);
-    //curINDX = 3;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD3.Write(writer);
-    //curINDX = 4;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD4.Write(writer);
-    //curINDX = 5;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD5.Write(writer);
-    //curINDX = 6;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD6.Write(writer);
-    //curINDX = 7;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD7.Write(writer);
-    //curINDX = 8;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //MOD8.Write(writer);
-
-    //WRITEEMPTY(NAM1);
-    //WRITEEMPTY(MNAM);
-    //MMODL.Write(writer);
-    //curINDX = 0;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(MICON0,ICON);
-    //curINDX = 1;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(MICON1,ICON);
-    //curINDX = 2;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(MICON2,ICON);
-    //curINDX = 3;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(MICON3,ICON);
-    //curINDX = 4;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(MICON4,ICON);
-
-    //WRITEEMPTY(FNAM);
-    //FMODL.Write(writer);
-    //curINDX = 0;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(FICON0,ICON);
-    //curINDX = 1;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(FICON1,ICON);
-    //curINDX = 2;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(FICON2,ICON);
-    //curINDX = 3;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(FICON3,ICON);
-    //curINDX = 4;
-    //writer.record_write_subrecord(REV32(INDX), &curINDX, 4);
-    //WRITEAS(FICON4,ICON);
-
-    //if(HNAM.value.size())
-    //    WRITE(HNAM);
-    //else
-    //    WRITEEMPTY(HNAM);
-
-    //if(ENAM.value.size())
-    //    WRITE(ENAM);
-    //else
-    //    WRITEEMPTY(ENAM);
-
-    //WRITE(FGGS);
-    //WRITE(FGGA);
-    //WRITE(FGTS);
-    //WRITE(SNAM);
+    WRITE(EDID); //Editor ID
+    WRITE(FULL); //Name
+    WRITE(DESC); //Description
+    WRITE(SPLO); // Actor effects
+    WRITE(WNAM); // Skin, ARMO record
+    BOD2.Write(REV32(BOD2), writer);
+    WRITE(KWDA); // Keywords
+    WRITE(DATA); //Data
+    WRITEEMPTY(MNAM); //Male Marker (Empty)
+    MNAM_ANAM.Write(REV32(ANAM), writer);
+    MNAM_MODT.Write(REV32(MODT), writer); //Texture Files Hashes
+    WRITEEMPTY(FNAM); //Female Marker (Empty)
+    FNAM_ANAM.Write(REV32(ANAM), writer);
+    FNAM_MODT.Write(REV32(MODT), writer); //Texture Files Hashes
+    //NAM2
+    WRITE(MTNM);
+    WRITE(VTCK); //default voice types	formid[2]	VTYP male / female
+    WRITE(DNAM); //Decapitate armor	formid[2]	ARMO male/female
+    WRITE(HCLF); //default hair color	formid[2]	CLFM male/female
+    WRITE(TINL); //Tint Index Number	uint16	This is the total number of Tints available to this race
+    WRITE(PNAM); //FaceGen	float	FaceGen - Main clamp
+    WRITE(UNAM); //FaceGen	float	FaceGen - Face clamp
+    WRITE(ATKR); // attack race, found in one record in Dawnguard
+    for (const auto& value : attacks.value.value)
+    {
+        writer.record_write_subrecord(REV32(ATKD), &value.ATKD.value, value.ATKD.GetSize());
+        writer.record_write_subrecord(REV32(ATKD), &value.ATKE.value, value.ATKE.GetSize());
+    }
+    WRITEEMPTY(NAM1); //Movement Marker (Empty)
+    WRITEEMPTY(MNAM); //Male Marker (Empty)
+    for (auto& bodyPart : bodyData.value.maleData.value)
+    {
+        writer.record_write_subrecord(REV32(INDX), &bodyPart.INDX, 4);
+        if (bodyPart.model.IsLoaded())
+        {
+            bodyPart.model->MODL.Write(REV32(MODL), writer);
+            bodyPart.model->MODS.Write(REV32(MODS), writer);
+        }
+    }
+    WRITEEMPTY(FNAM); //Male Marker (Empty)
+    for (auto& bodyPart : bodyData.value.femaleData.value)
+    {
+        writer.record_write_subrecord(REV32(INDX), &bodyPart.INDX, 4);
+        if (bodyPart.model.IsLoaded())
+        {
+            bodyPart.model->MODL.Write(REV32(MODL), writer);
+            bodyPart.model->MODS.Write(REV32(MODS), writer);
+        }
+    }
+    WRITE(HNAM); //hairs
+    WRITE(ENAM); //eyes
+    WRITE(GNAM); // Body part data (default BPTD:0000001D)
+    //ReqSubRecord<ModelInfo> NAM2; //Marker #2
+    //ReqSubRecord<ModelInfo> NAM3; //Marker #3
+    WRITEEMPTY(NAM3); //Behavior graph
+    WRITEEMPTY(MNAM); //Male Marker (Empty)
+    for (auto& graph : behaviors.maleGraph.value)
+    {
+        graph.MODL.Write(REV32(MODL), writer);
+        graph.MODS.Write(REV32(MODS), writer);
+    }
+    WRITEEMPTY(FNAM); //Male Marker (Empty)
+    for (auto& graph : behaviors.femaleGraph.value)
+    {
+        graph.MODL.Write(REV32(MODL), writer);
+        graph.MODS.Write(REV32(MODS), writer);
+    }
+    WRITE(NAM4); //Material Type
+    WRITE(NAM5); //Impact Data Set
+    WRITE(NAM7); //Decapitation FX
+    WRITE(ONAM); //Open Loot Sound
+    WRITE(LNAM); //Close Loot Sound
+    for (auto& record : NAME)
+        record.Write(REV32(NAME), writer);
+    movementTypes.Write(REV32(MTYP), writer);
+    WRITE(VNAM); //equipment flags
+    WRITE(QNAM); //Equip Slots
+    WRITE(UNES);                      //Unarmed Equip Slot
+    for (auto& record : PHTN)
+        record.Write(REV32(PHTN), writer);
+    WRITE(PHWT);
+    WRITE(WKMV); //Base Movement Default - Walk
+    WRITE(RNMV); //Base Movement Default - Run,
+    WRITE(SWMV); //Base Movement Default - Swim
+    WRITE(FLMV); //Base Movement Default - Fly
+    WRITE(SNMV); //Base Movement Default - Sneak
+    WRITE(SPMV); //Base Movement Default - Sprint
+    if (headData.maleHeadData.IsLoaded() || headData.femaleHeadData.IsLoaded())
+    {
+        WRITEEMPTY(NAM0); //Head data
+        if (headData.maleHeadData.IsLoaded())
+        {
+            WRITEEMPTY(MNAM); //Male Marker (Empty)
+            headData.maleHeadData.Write(writer);
+        }
+        if (headData.femaleHeadData.IsLoaded())
+        {
+            WRITEEMPTY(FNAM); //Female Marker (Empty)
+            headData.femaleHeadData.Write(writer);
+        }
+    }
+    WRITE(NAM8); //Morph race
+    WRITE(RNAM); //Armor race
 
     return -1;
     }
 
 bool RACERecord::operator ==(const RACERecord &other) const
     {
-    return false;/*(DATA == other.DATA &&
-            VNAM == other.VNAM &&
-            DNAM == other.DNAM &&
-            CNAM == other.CNAM &&
-            ATTR == other.ATTR &&
-            SNAM == other.SNAM &&
-            PNAM == other.PNAM &&
-            UNAM == other.UNAM &&
-            EDID.equalsi(other.EDID) &&
-            FULL.equals(other.FULL) &&
-            DESC.equals(other.DESC) &&
-            MICON0.equalsi(other.MICON0) &&
-            MICON1.equalsi(other.MICON1) &&
-            MICON2.equalsi(other.MICON2) &&
-            MICON3.equalsi(other.MICON3) &&
-            MICON4.equalsi(other.MICON4) &&
-            FICON0.equalsi(other.FICON0) &&
-            FICON1.equalsi(other.FICON1) &&
-            FICON2.equalsi(other.FICON2) &&
-            FICON3.equalsi(other.FICON3) &&
-            FICON4.equalsi(other.FICON4) &&
-            MOD0 == other.MOD0 &&
-            MOD1 == other.MOD1 &&
-            MOD2 == other.MOD2 &&
-            MOD3 == other.MOD3 &&
-            MOD4 == other.MOD4 &&
-            MOD5 == other.MOD5 &&
-            MOD6 == other.MOD6 &&
-            MOD7 == other.MOD7 &&
-            MOD8 == other.MOD8 &&
-            MMODL == other.MMODL &&
-            FMODL == other.FMODL &&
-            FGGS == other.FGGS &&
-            FGGA == other.FGGA &&
-            FGTS == other.FGTS &&
-            SPLO == other.SPLO &&
-            HNAM == other.HNAM &&
-            ENAM == other.ENAM &&
-            XNAM == other.XNAM);*/
+    return
+        EDID.equalsi(other.EDID) &&
+        FULL.equalsi(other.FULL) &&
+        DESC.equals(other.DESC) &&
+        SPLO == other.SPLO &&
+        WNAM == other.WNAM &&
+        BOD2 == other.BOD2 &&
+        KWDA == other.KWDA &&
+        DATA == other.DATA &&
+        //WRITEEMPTY(MNAM); //Male Marker (Empty)
+        MNAM_ANAM.equalsi(other.MNAM_ANAM) &&
+        //MNAM_MODT == other.MNAM_MODT &&
+        //WRITEEMPTY(FNAM); //Female Marker (Empty)
+        FNAM_ANAM.equalsi(other.FNAM_ANAM) &&
+        //FNAM_MODT == other.FNAM_MODT &&
+        //NAM2
+        MTNM == other.MTNM &&
+        VTCK == other.VTCK &&
+        DNAM == other.DNAM &&
+        HCLF == other.HCLF &&
+        TINL == other.TINL &&
+        PNAM == other.PNAM &&
+        UNAM == other.UNAM &&
+        ATKR == other.ATKR &&
+        attacks == other.attacks &&
+        //WRITEEMPTY(NAM1); //Movement Marker (Empty)
+        //WRITEEMPTY(MNAM); //Male Marker (Empty)
+        //bodyData == other.bodyData &&
+        HNAM == other.HNAM &&
+        ENAM == other.ENAM &&
+        GNAM == other.GNAM &&
+        //ReqSubRecord<ModelInfo> NAM2; //Marker #2
+        //ReqSubRecord<ModelInfo> NAM3; //Marker #3
+        //WRITEEMPTY(NAM3); //Behavior graph
+        //WRITEEMPTY(MNAM); //Male Marker (Empty)
+        //behaviors.maleGraph.value[0] == other.behaviors.maleGraph.value[0] &&
+        //behaviors.femaleGraph.value[0] == other.behaviors.femaleGraph.value[0] &&
+        NAM4 == other.NAM4 &&
+        NAM5 == other.NAM5 &&
+        NAM7 == other.NAM7 &&
+        ONAM == other.ONAM &&
+        LNAM == other.LNAM &&
+        //NAME == other.NAME &&
+        //movementTypes == other.movementTypes &&
+        VNAM == other.VNAM &&
+        QNAM == other.QNAM &&
+        UNES == other.UNES &&
+        //PHTN == other.PHTN &&
+        //PHWT == other.PHWT &&
+        WKMV == other.WKMV &&
+        RNMV == other.RNMV &&
+        SWMV == other.SWMV &&
+        FLMV == other.FLMV &&
+        SNMV == other.SNMV &&
+        SPMV == other.SPMV &&
+        //WRITEEMPTY(NAM0); //Head data
+        //WRITEEMPTY(MNAM); //Male Marker (Empty)
+        //headData.maleHeadData == other.headData.maleHeadData &&
+        //WRITEEMPTY(FNAM); //Female Marker (Empty)
+        //headData.femaleHeadData == other.headData.femaleHeadData &&
+        NAM8 == other.NAM8 &&
+        RNAM == other.RNAM;
     }
 
 bool RACERecord::operator !=(const RACERecord &other) const

@@ -249,7 +249,7 @@ namespace Sk
                 BODT.Read(buffer, subSize, CompressedOnDisk);
                 break;
             case REV32(BOD2):
-                BOD2.Read(buffer, subSize, CompressedOnDisk);
+                BOD2.Read(buffer, subSize);
                 break;
             case REV32(DEST):
                 DEST.Read(buffer, subSize);

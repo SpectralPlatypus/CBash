@@ -285,8 +285,8 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
             break;
       //case eIgARMA:           // Same as REV32(ARMA)
         case REV32(ARMA):
-            buffer_position = group_buffer_end;
-            //ARMA.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            ARMA.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
       //case eIgARMO:           // Same as REV32(ARMO)
         case REV32(ARMO):
@@ -313,10 +313,10 @@ int32_t TES5File::Load(RecordOp &read_parser, RecordOp &indexer, std::vector<For
         case REV32(BOOK):
             BOOK.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
-      //case eIgBPTD:           // Same as REV32(BPTD)
+        //case eIgBPTD:           // Same as REV32(BPTD)
         case REV32(BPTD):
-            buffer_position = group_buffer_end;
-            //BPTD.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
+            //buffer_position = group_buffer_end;
+            BPTD.Read(buffer_start, buffer_position, group_buffer_end, indexer, parser, DeletedRecords, processor, FileName);
             break;
         case eIgCAMS:
         case REV32(CAMS):
@@ -860,10 +860,8 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
         return ANIO.pool.used_object_capacity();
     case REV32(APPA):
         return APPA.pool.used_object_capacity();
-    /*
     case REV32(ARMA):
         return ARMA.pool.used_object_capacity();
-		*/
 	case REV32(ARMO):
         return ARMO.pool.used_object_capacity();
     case REV32(ARTO):
@@ -878,9 +876,9 @@ size_t TES5File::GetNumRecords(const uint32_t &RecordType)
     */
 	case REV32(BOOK):
         return BOOK.pool.used_object_capacity();
-    /*case REV32(BPTD):
+    case REV32(BPTD):
         return BPTD.pool.used_object_capacity();
-    case REV32(CAMS):
+    /*case REV32(CAMS):
         return CAMS.pool.used_object_capacity();
     */
     case REV32(CELL):  // Top CELLs
@@ -1491,9 +1489,9 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
         //return FLST.pool.construct(SourceRecord, this, true);
     case REV32(PERK):
         //return PERK.pool.construct(SourceRecord, this, true);
-    case REV32(BPTD):
-        //return BPTD.pool.construct(SourceRecord, this, true);
     */
+    case REV32(BPTD):
+        return BPTD.pool.construct(SourceRecord, this, true);
     case REV32(ADDN):
         return ADDN.pool.construct(SourceRecord, this, true);
     /*
@@ -1513,8 +1511,10 @@ Record * TES5File::CreateRecord(const uint32_t &RecordType, char * const &Record
         //return IPCT.pool.construct(SourceRecord, this, true);
     case REV32(IPDS):
         //return IPDS.pool.construct(SourceRecord, this, true);
+    */
     case REV32(ARMA):
-        //return ARMA.pool.construct(SourceRecord, this, true);
+        return ARMA.pool.construct(SourceRecord, this, true);
+    /*
     case REV32(ECZN):
         //return ECZN.pool.construct(SourceRecord, this, true);
     case REV32(MESG):
@@ -1627,12 +1627,10 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         APPA.pool.destroy(curRecord);
         return 1;
-    /*
     case REV32(ARMA):
         deindexer.Accept(curRecord);
         ARMA.pool.destroy(curRecord);
         return 1;
-    */
     case REV32(ARMO):
         deindexer.Accept(curRecord);
         ARMO.pool.destroy(curRecord);
@@ -1659,12 +1657,12 @@ int32_t TES5File::DeleteRecord(Record *&curRecord, RecordOp &deindexer)
         deindexer.Accept(curRecord);
         BOOK.pool.destroy(curRecord);
         return 1;
-	/*
+
     case REV32(BPTD):
         deindexer.Accept(curRecord);
         BPTD.pool.destroy(curRecord);
         return 1;
-    case REV32(CAMS):
+    /*case REV32(CAMS):
         deindexer.Accept(curRecord);
         CAMS.pool.destroy(curRecord);
         return 1;
@@ -2430,7 +2428,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     // formCount += HDPT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // HAIR - Skyrim.esm has an empty GRUP for these
     // formCount += EYES.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += RACE.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += RACE.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += SOUN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += ASPC.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += MGEF.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2494,7 +2492,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     // formCount += IMAD.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += FLST.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += PERK.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += BPTD.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += BPTD.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     formCount += ADDN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += AVIF.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += CAMS.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2503,7 +2501,7 @@ int32_t TES5File::Save(char * const &SaveName, std::vector<FormIDResolver *> &Ex
     formCount += MATT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += IPCT.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += IPDS.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
-    // formCount += ARMA.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
+    formCount += ARMA.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += ECZN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += LCTN.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
     // formCount += MESG.Write(writer, Expanders, expander, collapser, bMastersChanged, CloseMod);
@@ -2568,14 +2566,14 @@ void TES5File::VisitAllRecords(RecordOp &op)
     AMMO.pool.VisitRecords(op);
     ANIO.pool.VisitRecords(op);
     APPA.pool.VisitRecords(op);
-    // ARMA.pool.VisitRecords(op);
+    ARMA.pool.VisitRecords(op);
     ARMO.pool.VisitRecords(op);
     ARTO.pool.VisitRecords(op);
     ASPC.pool.VisitRecords(op);
     ASTP.pool.VisitRecords(op);
     // AVIF.pool.VisitRecords(op);
     BOOK.pool.VisitRecords(op);
-    // BPTD.pool.VisitRecords(op);
+    BPTD.pool.VisitRecords(op);
     // CAMS.pool.VisitRecords(op);
     // CELL
     {
@@ -2739,7 +2737,7 @@ void TES5File::VisitRecords(const uint32_t &RecordType, RecordOp &op)
         APPA.pool.VisitRecords(op);
         break;
     case REV32(ARMA):
-        // ARMA.pool.VisitRecords(op);
+        ARMA.pool.VisitRecords(op);
         break;
     case REV32(ARMO):
         ARMO.pool.VisitRecords(op);
@@ -2760,7 +2758,7 @@ void TES5File::VisitRecords(const uint32_t &RecordType, RecordOp &op)
         BOOK.pool.VisitRecords(op);
         break;
     case REV32(BPTD):
-        // BPTD.pool.VisitRecords(op);
+        BPTD.pool.VisitRecords(op);
         break;
     case REV32(CAMS):
         // CAMS.pool.VisitRecords(op);
