@@ -1040,6 +1040,18 @@ void StringRecord::Copy(char * FieldValue)
         }
     }
 
+void StringRecord::Copy(const char* FieldValue)
+{
+    Unload();
+    if (FieldValue != NULL)
+    {
+        S_SET_ON_DISK(false);
+        uint32_t size = (uint32_t)strlen(FieldValue) + 1;
+        VAL_NAME = new char[size];
+        memcpy(VAL_NAME, FieldValue, size);
+    }
+}
+
 void StringRecord::TruncateCopy(char * FieldValue, uint32_t MaxSize)
     {
     Unload();
@@ -1065,7 +1077,7 @@ bool StringRecord::equalsi(const StringRecord &other) const
     return icmps((S_GET_VALUE), (O_GET_VALUE(other))) == 0;
     }
 
-StringRecord& StringRecord::operator = (const StringRecord &rhs)
+StringRecord& StringRecord::operator= (const StringRecord &rhs)
     {
     if(this != &rhs)
         {
@@ -1085,6 +1097,18 @@ StringRecord& StringRecord::operator = (const StringRecord &rhs)
         }
     return *this;
     }
+
+StringRecord& StringRecord::operator= (const char* FieldValue)
+{
+    Copy(FieldValue);
+    return *this;
+}
+
+StringRecord& StringRecord::operator= (const std::string& FieldValue)
+{
+    Copy(FieldValue.c_str());
+    return *this;
+}
 
 NonNullStringRecord::NonNullStringRecord():
     value(NULL),

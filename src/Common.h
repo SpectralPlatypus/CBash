@@ -593,11 +593,14 @@ class StringRecord
         void ReqWrite(uint32_t _Type, FileWriter &writer);
 
         void Copy(char * FieldValue);
+        void Copy(const char* FieldValue);
         void TruncateCopy(char * FieldValue, uint32_t MaxSize);
 
         bool equals(const StringRecord &other) const;
         bool equalsi(const StringRecord &other) const;
         StringRecord& operator = (const StringRecord &rhs);
+        StringRecord& operator = (const char* FieldValue);
+        StringRecord& operator = (const std::string& FieldValue);
     };
 
 class NonNullStringRecord
