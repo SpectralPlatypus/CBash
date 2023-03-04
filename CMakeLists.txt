@@ -9,9 +9,8 @@
 ##############################
 
 cmake_minimum_required (VERSION 3.14)
+include(FetchContent)
 project (CBash)
-
-find_package(zlib REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build a shared library" OFF)
 option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
@@ -26,21 +25,23 @@ IF (MSVC)
             CMAKE_CXX_FLAGS_RELEASE  CMAKE_CXX_FLAGS_RELWITHDEBINFO
             CMAKE_CXX_FLAGS_DEBUG  CMAKE_CXX_FLAGS_DEBUG_INIT)
             STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
-            SET("${flag}" "${${flag}} /EHsc")
+            SET("${flag}" "${${flag}} /EHsc /MP")
         ENDFOREACH()
     ENDIF ()
 ENDIF ()
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-IF (MSVC)
-    set (ZLIB_LIBRARIES optimized "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstatic${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                    debug "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstaticd${CMAKE_STATIC_LIBRARY_SUFFIX}")
-ELSE ()
-    set (ZLIB_LIBRARIES "${BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
-ENDIF ()
+FetchContent_Declare(
+    zlib
+    GIT_REPOSITORY https://github.com/madler/zlib.git
+    GIT_TAG        v1.2.13
+)
 
-include(FetchContent)
+FetchContent_MakeAvailable(zlib)
+
+set(ZLIB_INCLUDE_DIR ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
@@ -102,15 +103,14 @@ ENDIF ()
 # Build CBash.
 message("Building")
 add_library           (CBash STATIC ${CBASH_SRC})
-add_dependencies	  (CBash zlib)
-target_link_libraries (CBash ${ZLIB_LIBRARIES})
+target_link_libraries (CBash PRIVATE zlibstatic)
 
 
 # Include source and library directories.
 target_include_directories ("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
                      "${CMAKE_CURRENT_SOURCE_DIR}/src"
 					 PRIVATE
-					 ${ZLIB_INCLUDE_DIRS})
+					 ${ZLIB_INCLUDE_DIR})
 
 
 enable_testing()
