@@ -256,7 +256,7 @@ class TES5File : public ModFile
         // GRUP(PROJ);
         // GRUP(PWAT); // Empty GRUP
         GRUP(QUST);
-        GRUP(RACE);
+        // GRUP(RACE);
         // GRUP(REGN);
         // GRUP(RELA);
         // GRUP(REVB);

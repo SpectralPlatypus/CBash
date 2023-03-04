@@ -11,15 +11,14 @@
 cmake_minimum_required (VERSION 3.14)
 project (CBash)
 
-option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
-option(CBASH_NO_BOOST_ZLIB "NO ZLIB" ON)
-option(BUILD_SHARED_LIBS "NO ZLIB" ON)
+find_package(zlib REQUIRED)
 
-include(ExternalProject)
+option(BUILD_SHARED_LIBS "Build a shared library" OFF)
+option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
 
 IF (MSVC)
-	# set (CMAKE_GENERATOR_TOOLSET "v141" CACHE STRING "Platform Toolset" FORCE)
-    # Force static C++ runtime linkage.
+	#set (CMAKE_GENERATOR_TOOLSET "v141" CACHE STRING "Platform Toolset" FORCE)
+    #Force static C++ runtime linkage.
     IF (PROJECT_STATIC_RUNTIME)
         FOREACH(flag
             CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
@@ -33,17 +32,7 @@ IF (MSVC)
 ENDIF ()
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-option(ZLIB_FORCE_STATIC "Remove the dynamic libraries after zlib install" ON)
-mark_as_advanced(ZLIB_FORCE_STATIC)
 
-ExternalProject_Add(zlib
-                    PREFIX "external"
-                    URL "https://zlib.net/zlib-1.2.12.tar.gz"
-                    CMAKE_ARGS -DCMAKE_C_FLAGS_DEBUG=${CMAKE_C_FLAGS_DEBUG} -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE} -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG} -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE} -DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}
-                    INSTALL_COMMAND "")
-ExternalProject_Get_Property(zlib SOURCE_DIR BINARY_DIR)
-set (ZLIB_INCLUDE_DIRS ${SOURCE_DIR} ${BINARY_DIR})
-message("ZLIB_INCLUDE_DIRS:" ${ZLIB_INCLUDE_DIRS})
 IF (MSVC)
     set (ZLIB_LIBRARIES optimized "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstatic${CMAKE_STATIC_LIBRARY_SUFFIX}"
                     debug "${BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}zlibstaticd${CMAKE_STATIC_LIBRARY_SUFFIX}")
@@ -59,10 +48,6 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-
-option(BUILD_SHARED_LIBS "Build a shared library" OFF)
-option(PROJECT_STATIC_RUNTIME "Build with static runtime libs (/MT)" ON)
-
 
 file (GLOB_RECURSE CBASH_FONV "${CMAKE_CURRENT_SOURCE_DIR}/src/FalloutNewVegas/*.cpp")
 file (GLOB_RECURSE CBASH_OBLIVION "${CMAKE_CURRENT_SOURCE_DIR}/src/Oblivion/*.cpp")
@@ -96,13 +81,6 @@ set (CBASH_SRC  "${CMAKE_CURRENT_SOURCE_DIR}/src/CBash.cpp"
 
 add_definitions(-DCBASH_NO_BOOST_ZLIB)
 
-
-# Include source and library directories.
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
-                     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-                     ${ZLIB_INCLUDE_DIRS})
-
-
 ##############################
 # System-Specific Settings
 ##############################
@@ -126,6 +104,14 @@ message("Building")
 add_library           (CBash STATIC ${CBASH_SRC})
 add_dependencies	  (CBash zlib)
 target_link_libraries (CBash ${ZLIB_LIBRARIES})
+
+
+# Include source and library directories.
+target_include_directories ("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/cbash"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+					 PRIVATE
+					 ${ZLIB_INCLUDE_DIRS})
+
 
 enable_testing()
 
